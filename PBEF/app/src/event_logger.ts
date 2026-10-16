@@ -59,6 +59,7 @@ export interface SessionConfig {
   activity_id: string;
   onFlush?: (events: InteractionEvent[]) => Promise<void> | void;
   flushIntervalMs?: number;
+  flushMode?: 'incremental' | 'snapshot'; // Default: 'incremental'
 }
 
 export class SessionEventLogger {
@@ -68,21 +69,25 @@ export class SessionEventLogger {
   private sessionStartTime: number | null = null;
   private lastActionTime: number | null = null;
   private lastStimulusTime: number | null = null;
+  private currentStimulusId: string | null = null;
   private promptCount = 0;
   private events: InteractionEvent[] = [];
   private isSessionActive = false;
   private flushTimer: ReturnType<typeof setInterval> | null = null;
   private onFlush?: (events: InteractionEvent[]) => Promise<void> | void;
+  private flushMode: 'incremental' | 'snapshot';
+  private lastFlushedIndex = 0;
 
   constructor(config: SessionConfig) {
     this.learnerId = config.learner_id;
     this.sessionId = config.session_id;
     this.currentActivityId = config.activity_id;
     this.onFlush = config.onFlush;
+    this.flushMode = config.flushMode ?? 'incremental';
 
     if (config.flushIntervalMs && config.flushIntervalMs > 0 && config.onFlush) {
       this.flushTimer = setInterval(() => {
-        if (this.isSessionActive && this.events.length > 0) {
+        if (this.isSessionActive && this.events.length > this.lastFlushedIndex) {
           this.flush();
         }
       }, config.flushIntervalMs);
@@ -159,6 +164,7 @@ export class SessionEventLogger {
   public logStimulusPresented(stimulusId?: string): InteractionEvent {
     const elapsed = this.getElapsedSessionMs();
     this.lastStimulusTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    this.currentStimulusId = stimulusId ?? `stim_${elapsed}`;
 
     const event: InteractionEvent = {
       learner_id: this.learnerId,
@@ -173,7 +179,7 @@ export class SessionEventLogger {
       touch_y: null,
       pause_before_action_ms: null,
       visual_features: null,
-      metadata: stimulusId ? { stimulus_id: stimulusId } : undefined,
+      metadata: { stimulus_id: this.currentStimulusId },
     };
 
     this.events.push(event);
@@ -182,6 +188,7 @@ export class SessionEventLogger {
 
   /**
    * Logs a learner response action (touch, selection, drag drop completion).
+   * Consumes active stimulus timestamp so subsequent touches do not inherit stale latency.
    */
   public logResponse(params: {
     isCorrect?: boolean | null;
@@ -200,6 +207,8 @@ export class SessionEventLogger {
       latency = params.explicitLatencyMs;
     } else if (this.lastStimulusTime !== null) {
       latency = Math.max(0, Math.round(now - this.lastStimulusTime));
+      // Consume stimulus: clear timestamp and ID to prevent subsequent touches from inheriting stale latency
+      this.lastStimulusTime = null;
     }
 
     // Calculate hesitation/pause time since last action
@@ -207,6 +216,12 @@ export class SessionEventLogger {
       ? Math.max(0, Math.round(now - this.lastActionTime))
       : null;
     this.lastActionTime = now;
+
+    const eventMetadata = {
+      ...params.metadata,
+      ...(this.currentStimulusId ? { stimulus_id: this.currentStimulusId } : {}),
+    };
+    this.currentStimulusId = null;
 
     const event: InteractionEvent = {
       learner_id: this.learnerId,
@@ -221,7 +236,7 @@ export class SessionEventLogger {
       touch_y: params.touchY ?? null,
       pause_before_action_ms: pauseBeforeAction,
       visual_features: params.visualFeatures ?? null,
-      metadata: params.metadata,
+      metadata: Object.keys(eventMetadata).length > 0 ? eventMetadata : undefined,
     };
 
     this.events.push(event);
@@ -348,9 +363,19 @@ export class SessionEventLogger {
   }
 
   public async flush(): Promise<void> {
-    if (this.onFlush && this.events.length > 0) {
-      const copy = [...this.events];
-      await this.onFlush(copy);
+    if (!this.onFlush) return;
+
+    if (this.flushMode === 'snapshot') {
+      if (this.events.length > 0) {
+        await this.onFlush([...this.events]);
+      }
+    } else {
+      // Incremental mode: only emit newly recorded events to prevent duplicate uploads
+      if (this.lastFlushedIndex < this.events.length) {
+        const batch = this.events.slice(this.lastFlushedIndex);
+        this.lastFlushedIndex = this.events.length;
+        await this.onFlush(batch);
+      }
     }
   }
 

@@ -1,0 +1,6 @@
+model_name,model_type,eval_split,pr_auc,roc_auc,f1_score,precision,recall,brier_score,threshold
+Prevalence Chance Baseline,Heuristic,Held-out Test (L003),0.1404,0.5,0.0,0.0,0.0,0.1207,1.0
+Deterministic Threshold Rule,Heuristic Baseline,Held-out Test (L003),0.1292,0.2799,0.1987,0.1292,0.4306,0.4873,0.2
+Logistic Regression (30s Summaries),Linear ML Baseline,Held-out Test (L003),0.2067,0.6952,0.2239,0.2419,0.2083,0.2716,0.79
+TCN Full Proposed (Personalized + Gate),Temporal Deep Learning,Held-out Test (L003),0.1698,0.6009,0.2886,0.1686,1.0,0.2271,0.37
+TCN Ablation: Camera Masked Fallback,Ablation (Reliability Gate Active),Held-out Test (L003),0.1698,0.6009,0.2886,0.1686,1.0,0.2271,0.37

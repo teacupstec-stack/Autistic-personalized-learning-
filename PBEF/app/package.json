@@ -5,7 +5,8 @@
   "description": "Component 3 (PBEF) Event Logger & Annotation Interface",
   "scripts": {
     "type-check": "tsc --noEmit",
-    "demo-logger": "tsx src/demo_logger.ts"
+    "demo-logger": "tsx src/demo_logger.ts",
+    "test": "tsx src/event_logger.test.ts"
   },
   "dependencies": {
     "react": "^19.0.0",

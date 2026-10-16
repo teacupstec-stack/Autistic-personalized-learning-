@@ -1,0 +1,62 @@
+[
+  {
+    "model_name": "Prevalence Chance Baseline",
+    "model_type": "Heuristic",
+    "eval_split": "Held-out Test (L003)",
+    "pr_auc": 0.1404,
+    "roc_auc": 0.5,
+    "f1_score": 0.0,
+    "precision": 0.0,
+    "recall": 0.0,
+    "brier_score": 0.1207,
+    "threshold": 1.0
+  },
+  {
+    "model_name": "Deterministic Threshold Rule",
+    "model_type": "Heuristic Baseline",
+    "eval_split": "Held-out Test (L003)",
+    "pr_auc": 0.1292,
+    "roc_auc": 0.2799,
+    "f1_score": 0.1987,
+    "precision": 0.1292,
+    "recall": 0.4306,
+    "brier_score": 0.4873,
+    "threshold": 0.2
+  },
+  {
+    "model_name": "Logistic Regression (30s Summaries)",
+    "model_type": "Linear ML Baseline",
+    "eval_split": "Held-out Test (L003)",
+    "pr_auc": 0.2067,
+    "roc_auc": 0.6952,
+    "f1_score": 0.2239,
+    "precision": 0.2419,
+    "recall": 0.2083,
+    "brier_score": 0.2716,
+    "threshold": 0.79
+  },
+  {
+    "model_name": "TCN Full Proposed (Personalized + Gate)",
+    "model_type": "Temporal Deep Learning",
+    "eval_split": "Held-out Test (L003)",
+    "pr_auc": 0.1698,
+    "roc_auc": 0.6009,
+    "f1_score": 0.2886,
+    "precision": 0.1686,
+    "recall": 1.0,
+    "brier_score": 0.2271,
+    "threshold": 0.37
+  },
+  {
+    "model_name": "TCN Ablation: Camera Masked Fallback",
+    "model_type": "Ablation (Reliability Gate Active)",
+    "eval_split": "Held-out Test (L003)",
+    "pr_auc": 0.1698,
+    "roc_auc": 0.6009,
+    "f1_score": 0.2886,
+    "precision": 0.1686,
+    "recall": 1.0,
+    "brier_score": 0.2271,
+    "threshold": 0.37
+  }
+]
