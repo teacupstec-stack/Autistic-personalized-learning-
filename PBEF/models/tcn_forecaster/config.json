@@ -1,0 +1,16 @@
+{
+  "model_name": "Component3_TemporalForecaster",
+  "interaction_dim": 8,
+  "visual_dim": 3,
+  "conv_channels": 32,
+  "history_seconds": 30,
+  "forecast_seconds": 20,
+  "best_checkpoint_metrics": {
+    "epoch": 13,
+    "val_pr_auc": 0.2898,
+    "val_roc_auc": 0.746,
+    "f1_score": 0.3137,
+    "precision": 0.186,
+    "recall": 1.0
+  }
+}

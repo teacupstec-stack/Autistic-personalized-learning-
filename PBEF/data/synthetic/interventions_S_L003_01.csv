@@ -1,0 +1,2 @@
+session_id,time_ms,intervention_type,initiator,impact
+S_L003_01,136000,verbal_prompt_and_redirect,teacher,state_reset
