@@ -48,8 +48,10 @@ from sklearn.metrics import (
 
 # Add paths
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'evaluation'))
 from train_logistic import extract_summary_features, fit_threshold_baseline
 from train_forecaster import TemporalForecaster, ParticipationDataset
+from evaluate_events import evaluate_event_alerts
 
 
 def evaluate_binary_predictions(y_true: np.ndarray, y_prob: np.ndarray, threshold: float = 0.5):
@@ -328,9 +330,31 @@ def run_benchmark():
     with open("results/metrics/benchmark_comparison.json", 'w') as f:
         json.dump(results, f, indent=2)
 
-    print("\n================ HEAD-TO-HEAD BENCHMARK RESULTS (TEST SPLIT: LEARNER L003) ================")
-    print(df_results[['model_name', 'pr_auc', 'roc_auc', 'f1_score', 'precision', 'recall']].to_string(index=False))
     print("\nSaved benchmark results to results/metrics/benchmark_comparison.csv and .json")
+
+    # -------------------------------------------------------------------------
+    # Event-Level Warning Evaluation on Test Split (Learner L003)
+    # -------------------------------------------------------------------------
+    test_manifest = manifest.iloc[test_mask].reset_index(drop=True)
+    event_metrics = evaluate_event_alerts(
+        test_manifest,
+        test_preds_full,
+        threshold=best_thresh_tcn,
+        horizon_sec=20,
+        cooldown_sec=15
+    )
+    with open("results/metrics/event_metrics.json", 'w') as f:
+        json.dump(event_metrics, f, indent=2)
+
+    print("\n================ EVENT-LEVEL WARNING METRICS (TEST SPLIT: LEARNER L003) ================")
+    print(f"Total True Onset Events: {event_metrics['total_true_onset_events']}")
+    print(f"True Positives Matched:  {event_metrics['true_positives_matched']}")
+    print(f"False Positives:         {event_metrics['false_positives_unmatched']}")
+    print(f"Event Precision:         {event_metrics['event_precision'] * 100:.2f}%")
+    print(f"Event Recall:            {event_metrics['event_recall'] * 100:.2f}%")
+    print(f"False Alerts / Hour:     {event_metrics['false_alerts_per_hour']:.2f}")
+    print(f"Mean Usable Lead Time:   {event_metrics['mean_usable_lead_time_sec']:.2f} seconds")
+    print(f"Saved event metrics to results/metrics/event_metrics.json\n")
 
 
 if __name__ == "__main__":

@@ -1,15 +1,15 @@
 {
-  "threshold": 0.5,
+  "threshold": 0.37,
   "horizon_seconds": 20,
   "cooldown_seconds": 15,
-  "total_true_onset_events": 144,
-  "true_positives_matched": 15,
-  "false_positives_unmatched": 29,
-  "event_precision": 0.3409,
-  "event_recall": 0.1042,
-  "event_f1": 0.1596,
-  "false_alerts_per_hour": 91.58,
-  "mean_usable_lead_time_sec": 3.87,
+  "total_true_onset_events": 72,
+  "true_positives_matched": 9,
+  "false_positives_unmatched": 22,
+  "event_precision": 0.2903,
+  "event_recall": 0.125,
+  "event_f1": 0.1748,
+  "false_alerts_per_hour": 138.95,
+  "mean_usable_lead_time_sec": 4.44,
   "median_usable_lead_time_sec": 0.0,
-  "total_exposure_hours": 0.317
+  "total_exposure_hours": 0.158
 }

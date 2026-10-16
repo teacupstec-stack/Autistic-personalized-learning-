@@ -69,23 +69,37 @@ def export_to_onnx(
     )
     print(f"[export_onnx] Saved ONNX model to: {output_onnx_path}")
 
-    # Verify parity using onnxruntime if available
+    # Verify parity using onnxruntime if available across multiple test cases
     try:
         import onnxruntime as ort
         session = ort.InferenceSession(output_onnx_path, providers=['CPUExecutionProvider'])
-        ort_inputs = {session.get_inputs()[0].name: dummy_input.numpy()}
-        ort_outs = session.run(None, ort_inputs)
+        input_name = session.get_inputs()[0].name
 
-        with torch.no_grad():
-            torch_f, torch_s = model(dummy_input)
+        test_cases = [
+            ("Batch size 1 (Standard Random)", torch.randn(1, 11, 30, dtype=torch.float32)),
+            ("Batch size 4 (Multi-sample Batch)", torch.randn(4, 11, 30, dtype=torch.float32)),
+            ("Batch size 16 (Full Batch)", torch.randn(16, 11, 30, dtype=torch.float32)),
+            ("Missing Camera Fallback (Visual Masked)", torch.randn(2, 11, 30, dtype=torch.float32)),
+            ("Zero Input Edge Case (Cold-Start)", torch.zeros(1, 11, 30, dtype=torch.float32)),
+        ]
+        # Set visual channels to 0 for missing camera test case
+        test_cases[3][1][:, 8:, :] = 0.0
 
-        diff_f = np.max(np.abs(torch_f.numpy() - ort_outs[0]))
-        diff_s = np.max(np.abs(torch_s.numpy() - ort_outs[1]))
-        print(f"[export_onnx] ONNX Runtime Verification Successful!")
-        print(f"  - Max abs diff forecast: {diff_f:.6e}")
-        print(f"  - Max abs diff state:    {diff_s:.6e}")
-        assert max(diff_f, diff_s) < 1e-4, "High divergence between PyTorch and ONNX!"
-        print("  - Numerical parity confirmed (diff < 1e-4).")
+        print(f"[export_onnx] Running ONNX Runtime Multi-Case Numerical Parity Verification:")
+        for name, tensor_in in test_cases:
+            ort_inputs = {input_name: tensor_in.numpy()}
+            ort_outs = session.run(None, ort_inputs)
+
+            with torch.no_grad():
+                torch_f, torch_s = model(tensor_in)
+
+            diff_f = np.max(np.abs(torch_f.numpy() - ort_outs[0]))
+            diff_s = np.max(np.abs(torch_s.numpy() - ort_outs[1]))
+            max_diff = max(diff_f, diff_s)
+            assert max_diff < 1e-4, f"High divergence in {name}: {max_diff}"
+            print(f"  - [{name}] Max abs diff: {max_diff:.6e} (PASS)")
+
+        print("  => All test cases verified: PyTorch and ONNX Runtime outputs match within tolerance.")
     except ImportError:
         print("[export_onnx] Note: onnxruntime not installed in active environment, skipped runtime verification.")
 

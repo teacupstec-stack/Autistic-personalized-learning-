@@ -342,15 +342,25 @@ The following metrics were computed by [`src/models/run_benchmark_comparison.py`
 | Model / Ablation | Model Type | PR-AUC | ROC-AUC | F1-Score | Precision | Recall | Brier Score | Decision Threshold |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **Prevalence Chance Baseline** | Random / Prior | `0.1404` | `0.5000` | `0.0000` | `0.0000` | `0.0000` | `0.1207` | 1.0000 |
-| **Deterministic Threshold Rule** | Heuristic Rule | `0.1292` | `0.2799` | `0.1987` | `0.1292` | `0.4306` | `0.5185` | $T = 1,489\text{ms}$ |
-| **Logistic Regression (30s Summaries)** | Linear Baseline | `0.2067` | `0.6952` | `0.2239` | `0.2419` | `0.2083` | `0.2317` | $0.5800$ |
-| **TCN Full Proposed (Personalized + Gate)** | Temporal ConvNet | **`0.1698`** | **`0.6009`** | **`0.2886`** | `0.1686` | **`1.0000`** | `0.4578` | $0.2100$ |
-| **TCN Ablation: Camera Masked Fallback** | Camera Suppressed | **`0.1698`** | **`0.6009`** | **`0.2886`** | `0.1686` | **`1.0000`** | `0.4578` | $0.2100$ |
+| **Deterministic Threshold Rule** | Heuristic Rule | `0.1292` | `0.2799` | `0.1987` | `0.1292` | `0.4306` | `0.4873` | $z_{\text{lat}} = +0.22$ |
+| **Logistic Regression (30s Summaries)** | Linear Baseline | `0.2067` | `0.6952` | `0.2239` | `0.2419` | `0.2083` | `0.2716` | $0.7900$ |
+| **TCN Full Proposed (Personalized + Gate)** | Temporal ConvNet | **`0.1698`** | **`0.6009`** | **`0.2886`** | `0.1686` | **`1.0000`** | `0.2271` | $0.3700$ |
+| **TCN Ablation: Camera Masked Fallback** | Camera Suppressed | **`0.1698`** | **`0.6009`** | **`0.2886`** | `0.1686` | **`1.0000`** | `0.2271` | $0.3700$ |
 
 ### Critical Analysis of Results (For PP1 Viva Defense):
-1. **Prevalence Context:** The test class prevalence is $14.0\%$. A model predicting purely by chance achieves a PR-AUC of `0.1404`. Both Logistic Regression (`0.2067`) and TCN (`0.1698`) demonstrate positive ranking discrimination above chance.
-2. **Logistic vs TCN Trade-off:** On this synthetic verification fixture, the linear logistic baseline achieves higher PR-AUC (`0.2067`) due to strong aggregate pause cues, whereas the TCN achieves a higher F1-score (`0.2886` vs `0.2239`) and perfect recall (`1.0000`), serving as a sensitive detector for early educator alerts.
-3. **Camera Gating Verification:** When the camera inputs are ablated on the test set (`visual_valid = 0`), the performance is completely invariant (`PR-AUC = 0.1698`), confirming that the reliability gate effectively protects the model from camera dropouts.
+1. **Prevalence Context:** The test class prevalence is $14.04\%$ (72 positive windows out of 513). A dummy classifier outputting constant positive class prevalence achieves a PR-AUC of `0.1404`.
+2. **Key Scientific Finding — Logistic Regression Outperforms TCN on Ranking Metrics:**
+   - **PR-AUC:** Logistic regression (`0.2067`) beats TCN (`0.1698`) in ranking positive forecast windows above negative ones.
+   - **ROC-AUC:** Logistic regression (`0.6952`) also outperforms TCN (`0.6009`) in overall discriminative ranking.
+   - **F1 vs. Recall Trade-Off:** The TCN achieves higher F1 (`0.2886` vs `0.2239`) at its validation-selected threshold ($0.37$), but this is accompanied by perfect recall (`1.0000`) and low precision (`0.1686`). At this threshold, the model catches all 72 positive windows in the test set, but also produces 355 false positives.
+   - **Academic Integrity Defense:** Perfect recall alone is not evidence of model superiority. Simple summary statistics (mean latency, total pause) provide strong discriminative cues on synthetic sequences. This demonstrates the value of rigorous benchmarking and provides an authentic research question for future modeling: *Under what temporal dynamics does deep sequence modeling provide true predictive value over calibrated linear baselines?*
+3. **Threshold Baseline Brier Score Reconciliation:**
+   - The threshold baseline makes hard binary predictions ($y \in \{0, 1\}$). Its Brier score equals the fraction of incorrect decisions: $\frac{FP + FN}{N} = \frac{209 + 41}{513} = \frac{250}{513} = \mathbf{0.4873}$. (The earlier document draft contained a typographical error of $0.5185$; the codebase and `benchmark_comparison.json` strictly compute $0.4873$).
+4. **Camera Gating Clarification (Missing-Camera Fallback Test):**
+   - In the synthetic test set, all visual frames have `visual_valid = 0.0` (0 valid visual frames).
+   - Because visual data is absent, the reliability gate correctly zeros out the visual branch ($h_{\text{vis\_gated}} = 0$).
+   - Therefore, evaluating with camera features unmasked vs masked yields identical metrics (`PR-AUC = 0.1698`).
+   - This experiment serves as an independent **missing-camera fallback test** (proving numerical stability and graceful degradation when camera data drops out), rather than evidence that visual features improve forecasting accuracy.
 
 ---
 
@@ -359,17 +369,20 @@ The following metrics were computed by [`src/models/run_benchmark_comparison.py`
 Evaluated via [`src/evaluation/evaluate_events.py`](src/evaluation/evaluate_events.py):
 
 - **Event Matching Algorithm:**
-  - An alert fired at time $t$ is marked as a **True Positive (TP)** if an eligible onset begins in $[t, t + 20\text{s}]$.
+  - An alert fired at time $t$ is marked as a **True Positive (TP)** if an eligible onset begins in $[t, t + 20\text{s}]$ ($0 \le t_{\text{onset}} - t \le 20\text{s}$).
   - **Cooldown Suppression:** Once an alert fires, subsequent alerts within **15 seconds** are suppressed to prevent alerting fatigue.
-  - **Duplicate Suppression:** At most 1 alert is matched per true onset episode.
-- **Metrics on Test Participant (L003 Sessions):**
-  - Total true onset episodes: **6**
-  - Matched alerts (TP): **5**
-  - Unmatched alerts (FP): **11**
-  - Event-level Precision: **31.3%**
-  - Event-level Recall: **83.3%** (5 of 6 episodes anticipated)
-  - Mean Usable Lead Time: **3.87 seconds** prior to observable participation cessation.
-  - Negative lead times: Strictly excluded by definition ($t_{\text{alert}} \le t_{\text{onset}}$).
+  - **Duplicate Suppression:** At most 1 alert is matched per true onset episode (no double counting).
+  - **Usable Lead Time:** Defined strictly as $(t_{\text{onset}} - t_{\text{alert}})$, bounded in $[0\text{s}, 20\text{s}]$.
+- **Metrics on Held-Out Test Participant (Learner L003, 3 Sessions, 573s / 0.158 hr eligible observation):**
+  - Total true onset events: **72**
+  - Matched alerts (TP): **9**
+  - Unmatched alerts (FP): **22**
+  - Event-level Precision: **29.03%** ($\frac{9}{9 + 22}$)
+  - Event-level Recall: **12.50%** ($\frac{9}{72}$)
+  - Event-level F1: **0.1748**
+  - False alerts per hour: **138.95 alerts / hour** ($\frac{22}{0.158\text{ hr}}$)
+  - Mean Usable Lead Time: **4.44 seconds** prior to observable participation cessation.
+  - Median Usable Lead Time: **0.0 seconds**.
 
 ---
 
@@ -416,9 +429,9 @@ Evaluated via [`src/evaluation/evaluate_events.py`](src/evaluation/evaluate_even
 | **TCN Held-Out Test PR-AUC** | `0.1698` | `results/metrics/benchmark_comparison.json` | Held-out Test (L003) | YES |
 | **TCN Held-Out Test F1** | `0.2886` | `results/metrics/benchmark_comparison.json` | Held-out Test (L003) | YES |
 | **Camera Masked Fallback PR-AUC**| `0.1698` | `results/metrics/benchmark_comparison.json` | Held-out Test (L003) | YES |
-| **Event-Level Precision** | `31.3%` | `results/metrics/event_metrics.json` | Held-out Test (L003) | YES |
-| **Mean Usable Lead Time** | `3.87s` | `results/metrics/event_metrics.json` | Held-out Test (L003) | YES |
-| **ONNX Max Absolute Error** | `5.96e-08` | Console log / `export_onnx.py` | Unit test tensor | YES |
+| **Event-Level Precision** | `29.03%` | `results/metrics/event_metrics.json` | Held-out Test (L003) | YES |
+| **Mean Usable Lead Time** | `4.44s` | `results/metrics/event_metrics.json` | Held-out Test (L003) | YES |
+| **ONNX Max Absolute Error** | `1.79e-07` | Console log / `export_onnx.py` | Multi-batch / masked tensors | YES |
 
 - **Synthetic vs Real Data:** **100% of the numbers above derive from synthetic verification sessions.** None of these numbers represent verified efficacy on real autistic children.
 - **Fair Comparison:** All test metrics are evaluated on the exact same held-out test participant (`L003`) over 513 windows.
