@@ -261,26 +261,15 @@ Conforming to [`docs/OBSERVABLE_LABELS.md`](docs/OBSERVABLE_LABELS.md):
 - **Forecast Horizon ($H$):** 20 seconds into the future ($[t, t + 20\text{s}]$).
 - **Sampling Resolution:** 1-second bins.
 - **Window Stride ($\Delta t$):** **1 second** (Sliding overlapping windows).
-- **Clarification on Window Overlap (Issue 1 Resolution):**
-  - For a 240-second session, candidate cutoff points $t$ range from $t = 30$ to $t = 240 - 20 = 220\text{s}$.
-  - Candidate windows per session = $220 - 30 + 1 = \mathbf{191\text{ windows}}$.
-  - Across 9 sessions: $9 \times 191 = \mathbf{1,719\text{ total candidate windows}}$.
-  - Adjacent windows share up to 29 seconds of history. **They are overlapping sliding windows.**
-  - **Leakage Prevention:** Splitting is strictly performed at the **participant level** and **session level** prior to window extraction. No session or learner appears in both train and test sets.
-- **Personal Baseline Normalization:**
-  - First 60 seconds of active engagement serve as learner calibration ($\mu_{\text{calib}}, \sigma_{\text{calib}}$).
-  - Interaction latencies and pause durations are normalized:
-    $$z = \frac{x - \mu_{\text{calib}}}{\sigma_{\text{calib}} + \epsilon}$$
-  - Cold-start fallback: If no calibration window exists, population training set statistics are used.
-- **Window Validity & Discard Criteria:**
-  - Truncated session tail ($< 20\text{s}$ follow-up remaining): Discarded.
-  - Teacher intervention in $[t, t + 20\text{s}]$ before onset: Marked `is_valid = 0` (prevents intervention contamination).
-  - Target window with $> 30\%$ `UNCERTAIN` annotations: Marked `is_valid = 0`.
-- **Actual Window Counts (from 9 synthetic sessions):**
-  - Total candidate windows: **1,719**
-  - Valid windows (`mask == 1`): **1,539** (89.5%)
-  - Excluded/Invalid windows: **180** (10.5%)
-  - Total forecast onset positive windows: **216** (14.0% class prevalence)
+- **Strict Temporal Isolation & Calibration Leakage Prevention (Audit Resolution):**
+  - **Calibration Period:** The first 60 seconds ($[0, 60\text{s})$) of each session serve as learner calibration ($\mu_{\text{calib}}, \sigma_{\text{calib}}$).
+  - **Zero Leakage Window Start:** Window extraction starts strictly at $t = \max(T_{\text{in}}, T_{\text{calib}}) = \mathbf{60\text{s}}$. No windows or predictions are extracted prior to $t = 60\text{s}$. This guarantees that calibration statistics never utilize future observation intervals.
+  - For a 240-second session, candidate cutoff points $t$ range from $t = 60$ to $t = 240 - 20 = 220\text{s}$.
+  - Candidate windows per session = $220 - 60 + 1 = \mathbf{161\text{ windows}}$.
+  - Across 9 sessions: $9 \times 161 = \mathbf{1,449\text{ total candidate windows}}$.
+  - **Intervention Exclusion:** Exactly 20 consecutive windows per session overlap with the session's teacher intervention in $[t, t + 20\text{s}]$ and are marked `is_valid = 0` ($9 \times 20 = \mathbf{180\text{ excluded windows}}$).
+  - **Valid Windows:** $1,449 - 180 = \mathbf{1,269\text{ valid windows}}$ (141 valid windows per session).
+  - **Splitting Isolation:** Data is partitioned at the **participant level** and **session level** prior to window extraction. No session or learner appears across multiple partitions.
 
 ---
 
@@ -290,11 +279,13 @@ To ensure absolute methodological fairness, data is partitioned strictly by **in
 
 | Split Name | Participants Assigned | Sessions Assigned | Valid Windows | Onset Positives | Positive Prevalence |
 | :--- | :--- | :--- | :---: | :---: | :---: |
-| **Training** | `L001`, `L002` | `S_L001_01`, `S_L001_02`, `S_L002_01`, `S_L002_02` (4 sessions) | **684** | 96 | 14.0% |
-| **Validation** | `L001`, `L002` | `S_L001_03`, `S_L002_03` (2 sessions) | **342** | 48 | 14.0% |
-| **Held-Out Test** | **`L003`** (Untouched) | `S_L003_01`, `S_L003_02`, `S_L003_03` (3 sessions) | **513** | 72 | **14.0%** |
+| **Training** | `L001`, `L002` | `S_L001_01`, `S_L001_02`, `S_L002_01`, `S_L002_02` (4 sessions) | **564** | 96 | **17.02%** |
+| **Validation** | `L001`, `L002` | `S_L001_03`, `S_L002_03` (2 sessions) | **282** | 48 | **17.02%** |
+| **Held-Out Test** | **`L003`** (Untouched) | `S_L003_01`, `S_L003_02`, `S_L003_03` (3 sessions) | **423** | 72 | **17.02%** |
 
 - **Zero Participant Leakage:** Learner `L003` is strictly held out. No data from `L003` was seen during scaler fitting, model training, or threshold selection.
+- **Explicit Partition Assertions:** Programmatically verified in [`src/models/run_benchmark_comparison.py`](src/models/run_benchmark_comparison.py) ensuring:
+  $$\text{Train} \cap \text{Val} = \emptyset, \quad \text{Train} \cap \text{Test} = \emptyset, \quad \text{Val} \cap \text{Test} = \emptyset, \quad \sum |\text{Splits}| = 1,269$$
 - **Fair Threshold Selection:** Optimal classification thresholds are selected on the **validation split only** by maximizing validation F1, and then frozen before evaluating on the held-out test split.
 
 ---
@@ -304,7 +295,7 @@ To ensure absolute methodological fairness, data is partitioned strictly by **in
 ### 9.1 Deterministic Threshold Rule
 - **Features:** Mean latency over 30s (`X[:, 0]`) and total pause duration (`X[:, 4]`).
 - **Rule:** Flag warning if $(\text{mean\_latency} > T_{\text{lat}}) \lor (\text{total\_pause} > T_{\text{pause}})$.
-- **Parameters:** Learned percentiles from training set: $T_{\text{lat}} = 1,489.1\text{ms}$, $T_{\text{pause}} = 3,210.5\text{ms}$.
+- **Parameters:** Learned percentiles from training set: $T_{\text{lat}} = +0.04$ (z-score), $T_{\text{pause}} = +2.48$ (z-score).
 
 ### 9.2 Logistic Regression Baseline
 - **Input Features (9 summary metrics collapsed from 30s):**
@@ -312,7 +303,7 @@ To ensure absolute methodological fairness, data is partitioned strictly by **in
 - **Preprocessing:** `StandardScaler` fitted strictly on training split summary features.
 - **Imbalance Handling:** `class_weight='balanced'`.
 
-### 9.3 Temporal Convolutional Network (TCN)
+### 9.3 Two-Layer Temporal Convolutional Forecaster
 - **Input Tensor:** $[B, 11, 30]$ (Batch size $B$, 11 features, 30 time steps).
 - **Interaction Temporal Encoder:**
   - $\text{Conv1D}(8 \to 32, \text{kernel}=3, \text{padding}=1) \to \text{BatchNorm1D} \to \text{ReLU} \to \text{Dropout}(0.2)$
@@ -332,74 +323,92 @@ To ensure absolute methodological fairness, data is partitioned strictly by **in
 - **Loss Formulation:**
   $$\mathcal{L} = \text{BCEWithLogitsLoss}(y_{\text{forecast}}, \hat{y}_{\text{forecast}}; w_{\text{pos}} = 3.0) + 0.3 \cdot \text{CrossEntropyLoss}(y_{\text{state}}, \hat{y}_{\text{state}})$$
 - **Optimizer:** Adam ($\text{lr} = 0.001$, weight decay = $10^{-4}$), 30 epochs, batch size = 16.
+- **Checkpointing:** Strict deepcopy (`copy.deepcopy(model.state_dict())`) ensures validation best weights are never mutated by subsequent training epochs.
 
 ---
 
-## 10. Empirical Head-to-Head Benchmark Results
+## 10. Empirical Head-to-Head Benchmark Results (All 7 Configurations)
 
-The following metrics were computed by [`src/models/run_benchmark_comparison.py`](src/models/run_benchmark_comparison.py) on the **identical, untouched held-out test split (Learner L003, 513 windows, 14.0% prevalence)**:
+The following metrics were computed by [`src/models/run_benchmark_comparison.py`](src/models/run_benchmark_comparison.py) on the **identical, untouched held-out test split (Learner L003, 423 windows, 17.02% prevalence)**:
 
 | Model / Ablation | Model Type | PR-AUC | ROC-AUC | F1-Score | Precision | Recall | Brier Score | Decision Threshold |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Prevalence Chance Baseline** | Random / Prior | `0.1404` | `0.5000` | `0.0000` | `0.0000` | `0.0000` | `0.1207` | 1.0000 |
-| **Deterministic Threshold Rule** | Heuristic Rule | `0.1292` | `0.2799` | `0.1987` | `0.1292` | `0.4306` | `0.4873` | $z_{\text{lat}} = +0.22$ |
-| **Logistic Regression (30s Summaries)** | Linear Baseline | `0.2067` | `0.6952` | `0.2239` | `0.2419` | `0.2083` | `0.2716` | $0.7900$ |
-| **TCN Full Proposed (Personalized + Gate)** | Temporal ConvNet | **`0.1698`** | **`0.6009`** | **`0.2886`** | `0.1686` | **`1.0000`** | `0.2271` | $0.3700$ |
-| **TCN Ablation: Camera Masked Fallback** | Camera Suppressed | **`0.1698`** | **`0.6009`** | **`0.2886`** | `0.1686` | **`1.0000`** | `0.2271` | $0.3700$ |
+| **Prevalence Chance Baseline** | Heuristic Prior | `0.1702` | `0.5000` | `0.0000` | `0.0000` | `0.0000` | `0.1412` | $0.50$ |
+| **Deterministic Threshold Rule** | Heuristic Rule | `null` | `null` | `0.2292` | `0.1410` | `0.6111` | `0.6998` | $z_{\text{lat}} = +0.04$ |
+| **Logistic Regression (30s Summaries)** | Linear ML Baseline | **`0.4739`** | **`0.8179`** | **`0.5316`** | **`0.4884`** | `0.5833` | `0.3056` | $0.9000$ |
+| **TCN Population Baseline (No Personal Calib)** | Temporal ConvNet | `0.1834` | `0.5931` | `0.3275` | `0.2186` | `0.6528` | `0.2308` | $0.2700$ |
+| **TCN Personal Baseline (Interaction-Only)** | Temporal ConvNet | `0.3902` | `0.8099` | `0.3512` | `0.2130` | **`1.0000`** | `0.3132` | $0.5000$ |
+| **TCN Full Proposed (Personalized + Gate)** | Temporal ConvNet | `0.3575` | `0.7853` | `0.3512` | `0.2130` | **`1.0000`** | `0.3032` | $0.5400$ |
+| **TCN Ablation: Camera Masked Fallback** | Camera Suppressed | `0.3575` | `0.7853` | `0.3512` | `0.2130` | **`1.0000`** | `0.3032` | $0.5400$ |
 
 ### Critical Analysis of Results (For PP1 Viva Defense):
-1. **Prevalence Context:** The test class prevalence is $14.04\%$ (72 positive windows out of 513). A dummy classifier outputting constant positive class prevalence achieves a PR-AUC of `0.1404`.
-2. **Key Scientific Finding — Logistic Regression Outperforms TCN on Ranking Metrics:**
-   - **PR-AUC:** Logistic regression (`0.2067`) beats TCN (`0.1698`) in ranking positive forecast windows above negative ones.
-   - **ROC-AUC:** Logistic regression (`0.6952`) also outperforms TCN (`0.6009`) in overall discriminative ranking.
-   - **F1 vs. Recall Trade-Off:** The TCN achieves higher F1 (`0.2886` vs `0.2239`) at its validation-selected threshold ($0.37$), but this is accompanied by perfect recall (`1.0000`) and low precision (`0.1686`). At this threshold, the model catches all 72 positive windows in the test set, but also produces 355 false positives.
-   - **Academic Integrity Defense:** Perfect recall alone is not evidence of model superiority. Simple summary statistics (mean latency, total pause) provide strong discriminative cues on synthetic sequences. This demonstrates the value of rigorous benchmarking and provides an authentic research question for future modeling: *Under what temporal dynamics does deep sequence modeling provide true predictive value over calibrated linear baselines?*
-3. **Threshold Baseline Brier Score Reconciliation:**
-   - The threshold baseline makes hard binary predictions ($y \in \{0, 1\}$). Its Brier score equals the fraction of incorrect decisions: $\frac{FP + FN}{N} = \frac{209 + 41}{513} = \frac{250}{513} = \mathbf{0.4873}$. (The earlier document draft contained a typographical error of $0.5185$; the codebase and `benchmark_comparison.json` strictly compute $0.4873$).
-4. **Camera Gating Clarification (Missing-Camera Fallback Test):**
-   - In the synthetic test set, all visual frames have `visual_valid = 0.0` (0 valid visual frames).
-   - Because visual data is absent, the reliability gate correctly zeros out the visual branch ($h_{\text{vis\_gated}} = 0$).
-   - Therefore, evaluating with camera features unmasked vs masked yields identical metrics (`PR-AUC = 0.1698`).
-   - This experiment serves as an independent **missing-camera fallback test** (proving numerical stability and graceful degradation when camera data drops out), rather than evidence that visual features improve forecasting accuracy.
+1. **Prevalence Context:** The training prevalence is $17.02\%$. The Prevalence Chance Baseline is fitted strictly on training data ($17.02\%$) and evaluated on test labels, achieving a PR-AUC of `0.1702`.
+2. **Impact of Personal Baseline Calibration:**
+   - Comparing Model 4 (Population Baseline) to Model 5 (Personal Baseline):
+   - PR-AUC increases from **`0.1834`** to **`0.3902`** (+112% relative improvement).
+   - ROC-AUC increases from **`0.5931`** to **`0.8099`**.
+   - This provides direct empirical proof that normalizing interaction latency and pause durations against an initial 60-second engagement window is a powerful feature engineering mechanism.
+3. **Logistic Regression vs. TCN Performance:**
+   - On this synthetic verification fixture, **Logistic Regression outperforms the TCN on both ranking metrics**:
+     - PR-AUC: `0.4739` (Logistic) vs. `0.3575` (TCN Full).
+     - ROC-AUC: `0.8179` (Logistic) vs. `0.7853` (TCN Full).
+     - F1-Score: `0.5316` (Logistic) vs. `0.3512` (TCN Full).
+   - The TCN achieves perfect recall (`1.0000`), catching all 72 test onset windows, but produces lower precision (`0.2130`).
+   - **Academic Honesty:** Perfect recall at low precision is not evidence of model superiority. Summary statistics provide strong linear discriminative cues on synthetic sequences. This demonstrates the value of rigorous benchmarking and establishes an authentic research question for future modeling.
+4. **Deterministic Threshold Rule:**
+   - Evaluated as hard binary decisions. PR-AUC and ROC-AUC are reported as `null` (avoiding mathematically invalid fabricated formulas).
+   - Brier score (`0.6998`) directly measures the fraction of incorrect binary predictions ($\frac{FP + FN}{N}$).
+5. **Camera Gating Clarification (Missing-Camera Fallback Test):**
+   - In the synthetic test set, all visual frames have `visual_valid = 0.0`.
+   - The reliability gate successfully zeros out visual influence ($h_{\text{vis\_gated}} = 0$), producing identical metrics (`PR-AUC = 0.3575`) when visual features are masked.
+   - This demonstrates **graceful missing-camera fallback** and numerical stability under camera failure, rather than evidence that visual features improve prediction over interaction data.
 
 ---
 
-## 11. Event-Level Evaluation
+## 11. Event-Level Evaluation (Advance Warning Matching)
 
 Evaluated via [`src/evaluation/evaluate_events.py`](src/evaluation/evaluate_events.py):
 
 - **Event Matching Algorithm:**
-  - An alert fired at time $t$ is marked as a **True Positive (TP)** if an eligible onset begins in $[t, t + 20\text{s}]$ ($0 \le t_{\text{onset}} - t \le 20\text{s}$).
+  - Evaluated against **actual discrete ground-truth onset episodes** (not overlapping window cutoffs).
+  - An alert fired at time $t$ is marked as a **True Positive (TP)** advance warning if an onset episode begins at $T_{\text{onset}}$ strictly ahead in $[t + 1\text{s}, t + 20\text{s}]$ ($0 < T_{\text{onset}} - t \le 20\text{s}$). Alerts fired after onset has arrived receive zero credit.
   - **Cooldown Suppression:** Once an alert fires, subsequent alerts within **15 seconds** are suppressed to prevent alerting fatigue.
   - **Duplicate Suppression:** At most 1 alert is matched per true onset episode (no double counting).
-  - **Usable Lead Time:** Defined strictly as $(t_{\text{onset}} - t_{\text{alert}})$, bounded in $[0\text{s}, 20\text{s}]$.
-- **Metrics on Held-Out Test Participant (Learner L003, 3 Sessions, 573s / 0.158 hr eligible observation):**
-  - Total true onset events: **72**
-  - Matched alerts (TP): **9**
+  - **Usable Lead Time:** Defined strictly as $(T_{\text{onset}} - t_{\text{alert}})$, bounded in $(0\text{s}, 20\text{s}]$.
+- **Metrics on Held-Out Test Participant (Learner L003, 3 Sessions, 483.0s / 0.1342 hr observation):**
+  - Total true onset episodes: **3** (1 per test session: `S_L003_01` @ 105s, `S_L003_02` @ 120s, `S_L003_03` @ 125s)
+  - Matched alerts (TP): **3**
   - Unmatched alerts (FP): **22**
-  - Event-level Precision: **29.03%** ($\frac{9}{9 + 22}$)
-  - Event-level Recall: **12.50%** ($\frac{9}{72}$)
-  - Event-level F1: **0.1748**
-  - False alerts per hour: **138.95 alerts / hour** ($\frac{22}{0.158\text{ hr}}$)
-  - Mean Usable Lead Time: **4.44 seconds** prior to observable participation cessation.
-  - Median Usable Lead Time: **0.0 seconds**.
+  - Event-level Precision: **12.00%** ($\frac{3}{3 + 22}$)
+  - Event-level Recall: **100.00%** ($\frac{3}{3}$ — all 3 onset episodes anticipated in advance)
+  - Event-level F1: **0.2143**
+  - False alerts per hour: **163.98 alerts / hour** ($\frac{22}{0.1342\text{ hr}}$)
+  - **Mean Usable Lead Time: 16.67 seconds** prior to observable participation cessation.
+  - Median Usable Lead Time: **15.00 seconds**.
+- **Per-Session Breakdown:**
+  - `S_L003_01`: 1 true onset, 1 matched TP, 3 false alerts, duration 161.0s.
+  - `S_L003_02`: 1 true onset, 1 matched TP, 10 false alerts, duration 161.0s.
+  - `S_L003_03`: 1 true onset, 1 matched TP, 9 false alerts, duration 161.0s.
 
 ---
 
-## 12. ONNX Export and Browser Inference
+## 12. ONNX Export and Multi-Case Parity Verification
 
 - **Export Script:** [`src/models/export_onnx.py`](src/models/export_onnx.py)
 - **Model Path:** `models/tcn_forecaster/model.onnx`
 - **Opset Version:** 16 (legacy TorchScript-compatible exporter with UTF-8 stdout configuration)
+- **Hardened Validation:** Script strictly requires a trained checkpoint (`model.pt`) and raises `FileNotFoundError` if missing, preventing silent export of untrained random models.
 - **Dynamic Axes:** Batch size dimension dynamic for both input and outputs:
   - Input: `input_features` $[B, 11, 30]$
   - Outputs: `forecast_logit` $[B, 1]$, `state_logits` $[B, 3]$
-- **Inference Engine:** ONNX Runtime WebAssembly (`CPUExecutionProvider`)
-- **Numerical Parity Verification:**
-  - Input: Random tensor $[1, 11, 30]$
-  - Max absolute difference (Forecast Logit): **`0.000000e+00`**
-  - Max absolute difference (State Logits): **`5.960464e-08`**
-  - Threshold requirement ($< 10^{-4}$): **PASSED** (Numerical equivalence confirmed).
+- **Multi-Case Numerical Parity Verification:**
+  - Standard Random $[1, 11, 30]$: Max abs diff = **`5.96e-08`** (PASS)
+  - Multi-sample Batch $[4, 11, 30]$: Max abs diff = **`1.19e-07`** (PASS)
+  - Full Batch $[16, 11, 30]$: Max abs diff = **`1.19e-07`** (PASS)
+  - Missing Camera Fallback: Max abs diff = **`5.96e-08`** (PASS)
+  - Zero Cold-Start Edge Case: Max abs diff = **`5.96e-08`** (PASS)
+  - **Real Preprocessed Pipeline Sample:** Max abs diff = **`5.96e-08`** (PASS)
+  - Threshold requirement ($< 10^{-4}$): **ALL 6 CASES PASSED**.
 
 ---
 
@@ -421,20 +430,22 @@ Evaluated via [`src/evaluation/evaluate_events.py`](src/evaluation/evaluate_even
 
 | Metric / Claim | Reported Value | Source File / Artifact | Data Split Evaluated | Independently Reproduced? |
 | :--- | :---: | :--- | :--- | :---: |
-| **Chance Prevalence** | `14.04%` | `results/metrics/benchmark_comparison.json` | Held-out Test (L003) | YES |
-| **Threshold Rule F1** | `0.1987` | `results/metrics/benchmark_comparison.json` | Held-out Test (L003) | YES |
-| **Logistic Regression PR-AUC** | `0.2067` | `results/metrics/benchmark_comparison.json` | Held-out Test (L003) | YES |
-| **Logistic Regression ROC-AUC**| `0.6952` | `results/metrics/benchmark_comparison.json` | Held-out Test (L003) | YES |
-| **TCN Validation PR-AUC** | `0.3653` | `models/tcn_forecaster/metrics.json` | Validation Split (L001/L002) | YES |
-| **TCN Held-Out Test PR-AUC** | `0.1698` | `results/metrics/benchmark_comparison.json` | Held-out Test (L003) | YES |
-| **TCN Held-Out Test F1** | `0.2886` | `results/metrics/benchmark_comparison.json` | Held-out Test (L003) | YES |
-| **Camera Masked Fallback PR-AUC**| `0.1698` | `results/metrics/benchmark_comparison.json` | Held-out Test (L003) | YES |
-| **Event-Level Precision** | `29.03%` | `results/metrics/event_metrics.json` | Held-out Test (L003) | YES |
-| **Mean Usable Lead Time** | `4.44s` | `results/metrics/event_metrics.json` | Held-out Test (L003) | YES |
-| **ONNX Max Absolute Error** | `1.79e-07` | Console log / `export_onnx.py` | Multi-batch / masked tensors | YES |
+| **Train Class Prevalence** | `17.02%` | `results/metrics/benchmark_comparison.json` | Training Split (L001/L002) | YES |
+| **Test Class Prevalence** | `17.02%` | `results/metrics/benchmark_comparison.json` | Held-out Test (L003) | YES |
+| **Threshold Rule F1** | `0.2292` | `results/metrics/benchmark_comparison.json` | Held-out Test (L003) | YES |
+| **Logistic Regression PR-AUC** | `0.4739` | `results/metrics/benchmark_comparison.json` | Held-out Test (L003) | YES |
+| **Logistic Regression ROC-AUC**| `0.8179` | `results/metrics/benchmark_comparison.json` | Held-out Test (L003) | YES |
+| **TCN Population Baseline PR-AUC**| `0.1834` | `results/metrics/benchmark_comparison.json` | Held-out Test (L003) | YES |
+| **TCN Personal Baseline PR-AUC**| `0.3902` | `results/metrics/benchmark_comparison.json` | Held-out Test (L003) | YES |
+| **TCN Full Proposed PR-AUC** | `0.3575` | `results/metrics/benchmark_comparison.json` | Held-out Test (L003) | YES |
+| **Camera Masked Fallback PR-AUC**| `0.3575` | `results/metrics/benchmark_comparison.json` | Held-out Test (L003) | YES |
+| **Event-Level Precision** | `12.00%` | `results/metrics/event_metrics.json` | Held-out Test (L003) | YES |
+| **Event-Level Recall** | `100.00%` | `results/metrics/event_metrics.json` | Held-out Test (L003) | YES |
+| **Mean Usable Lead Time** | `16.67s` | `results/metrics/event_metrics.json` | Held-out Test (L003) | YES |
+| **ONNX Max Absolute Error** | `1.19e-07` | Console log / `export_onnx.py` | Multi-batch / masked / real sample | YES |
 
 - **Synthetic vs Real Data:** **100% of the numbers above derive from synthetic verification sessions.** None of these numbers represent verified efficacy on real autistic children.
-- **Fair Comparison:** All test metrics are evaluated on the exact same held-out test participant (`L003`) over 513 windows.
+- **Fair Comparison:** All test metrics are evaluated on the exact same held-out test participant (`L003`) over 423 windows.
 
 ---
 

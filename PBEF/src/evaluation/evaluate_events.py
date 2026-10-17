@@ -43,47 +43,76 @@ def evaluate_event_alerts(
     horizon_sec: int = 20,
     cooldown_sec: int = 15
 ):
+    """
+    Evaluates event-level forecast warnings against ground-truth onset episodes.
+
+    ADVANCE WARNING MATCHING CONTRACT:
+      - Ground-truth onsets: Discrete onset episode start timestamps (not overlapping window cutoffs).
+      - Advance warning condition: An alert at time t matches an onset at T_onset if
+        0 < (T_onset - t) <= horizon_ms (strictly warns 1s to 20s in advance).
+      - At most one alert can match each genuine onset episode (no duplicate counting).
+      - Cooldown: Once an alert fires, subsequent alerts within cooldown_sec (15s) are suppressed.
+      - Unmatched emitted alerts are counted as false positives (FP).
+      - Usable lead time: (T_onset - t) in seconds, strictly in (0, 20].
+    """
     df = manifest_df.copy()
+    if 'is_valid' in df.columns and len(df) != len(predicted_probs):
+        df = df[df['is_valid'] == 1].reset_index(drop=True)
+
     df['pred_prob'] = predicted_probs
     df['raw_alert'] = (df['pred_prob'] >= threshold).astype(int)
 
     horizon_ms = horizon_sec * 1000
     cooldown_ms = cooldown_sec * 1000
 
-    results_by_session = []
     all_matched_lead_times = []
     total_true_events = 0
     total_true_positives = 0
     total_false_positives = 0
     total_exposure_ms = 0
+    per_session_records = []
 
     for session_id, s_df in df.groupby('session_id'):
         s_df = s_df.sort_values(by='cutoff_time_ms').reset_index(drop=True)
-        session_duration = s_df['cutoff_time_ms'].max() - s_df['cutoff_time_ms'].min()
+        session_duration = s_df['cutoff_time_ms'].max() - s_df['cutoff_time_ms'].min() + 1000
         total_exposure_ms += session_duration
 
-        # Identify true onsets in session
-        onset_times = s_df[s_df['target_onset'] == 1]['cutoff_time_ms'].unique()
-        total_true_events += len(onset_times)
+        # Identify genuine onset episode timestamps for this session
+        if 'session_true_onsets' in s_df.columns and pd.notna(s_df['session_true_onsets'].iloc[0]):
+            true_onset_times = [int(x) for x in json.loads(s_df['session_true_onsets'].iloc[0])]
+        else:
+            # Group contiguous target_onset windows to find the onset arrival time
+            onset_cutoffs = s_df[s_df['target_onset'] == 1]['cutoff_time_ms'].to_numpy()
+            if len(onset_cutoffs) > 0:
+                diffs = np.diff(onset_cutoffs)
+                splits = np.where(diffs > 10000)[0] + 1
+                # The onset occurs at the end of the first target horizon
+                true_onset_times = [int(blk[0]) + horizon_ms for blk in np.split(onset_cutoffs, splits)]
+            else:
+                true_onset_times = []
+
+        total_true_events += len(true_onset_times)
         matched_onsets = set()
+        session_tps = 0
+        session_fps = 0
 
         last_alert_time = -float('inf')
 
         for _, row in s_df.iterrows():
-            t = row['cutoff_time_ms']
-            is_alert = row['raw_alert'] == 1
+            t = int(row['cutoff_time_ms'])
+            is_alert = (row['raw_alert'] == 1)
 
             if not is_alert:
                 continue
 
-            # Check cooldown
+            # Check cooldown suppression
             if t - last_alert_time < cooldown_ms:
                 continue  # Suppressed by cooldown
 
             last_alert_time = t
 
-            # Check if this alert matches an upcoming true onset within horizon
-            eligible_onsets = [o for o in onset_times if 0 <= (o - t) <= horizon_ms and o not in matched_onsets]
+            # Check if this alert anticipates an upcoming true onset (strictly advance warning: 0 < T_onset - t <= horizon)
+            eligible_onsets = [o for o in true_onset_times if 0 < (o - t) <= horizon_ms and o not in matched_onsets]
 
             if eligible_onsets:
                 first_onset = eligible_onsets[0]
@@ -91,8 +120,18 @@ def evaluate_event_alerts(
                 lead_time_sec = (first_onset - t) / 1000.0
                 all_matched_lead_times.append(lead_time_sec)
                 total_true_positives += 1
+                session_tps += 1
             else:
                 total_false_positives += 1
+                session_fps += 1
+
+        per_session_records.append({
+            'session_id': session_id,
+            'true_onsets': len(true_onset_times),
+            'matched_tp': session_tps,
+            'false_alerts_fp': session_fps,
+            'duration_sec': round(session_duration / 1000.0, 1)
+        })
 
     total_hours = max(0.001, total_exposure_ms / (1000.0 * 3600.0))
     false_alerts_per_hour = total_false_positives / total_hours
@@ -108,7 +147,7 @@ def evaluate_event_alerts(
         'threshold': round(float(threshold), 3),
         'horizon_seconds': horizon_sec,
         'cooldown_seconds': cooldown_sec,
-        'total_true_onset_events': int(total_true_events),
+        'total_true_onset_episodes': int(total_true_events),
         'true_positives_matched': int(total_true_positives),
         'false_positives_unmatched': int(total_false_positives),
         'event_precision': round(float(precision), 4),
@@ -117,7 +156,8 @@ def evaluate_event_alerts(
         'false_alerts_per_hour': round(float(false_alerts_per_hour), 2),
         'mean_usable_lead_time_sec': round(lead_mean, 2),
         'median_usable_lead_time_sec': round(lead_median, 2),
-        'total_exposure_hours': round(float(total_hours), 3)
+        'total_exposure_hours': round(float(total_hours), 4),
+        'per_session_breakdown': per_session_records
     }
 
     return metrics
@@ -156,13 +196,13 @@ def main():
         json.dump(metrics, f, indent=2)
 
     print("\n================ EVENT EVALUATION RESULTS ================")
-    print(f"Total True Events: {metrics['total_true_onset_events']}")
-    print(f"Matched Alerts (TP): {metrics['true_positives_matched']}")
-    print(f"False Alerts: {metrics['false_positives_unmatched']}")
-    print(f"Event Precision: {metrics['event_precision']:.4f}")
-    print(f"Event Recall: {metrics['event_recall']:.4f}")
-    print(f"False Alerts / Hour: {metrics['false_alerts_per_hour']}")
-    print(f"Mean Usable Lead Time: {metrics['mean_usable_lead_time_sec']} seconds")
+    print(f"Total True Onset Episodes: {metrics['total_true_onset_episodes']}")
+    print(f"Matched Alerts (TP):       {metrics['true_positives_matched']}")
+    print(f"False Alerts (FP):         {metrics['false_positives_unmatched']}")
+    print(f"Event Precision:           {metrics['event_precision']:.4f}")
+    print(f"Event Recall:              {metrics['event_recall']:.4f}")
+    print(f"False Alerts / Hour:       {metrics['false_alerts_per_hour']}")
+    print(f"Mean Usable Lead Time:     {metrics['mean_usable_lead_time_sec']} seconds")
     print(f"Saved report to: {args.output_file}\n")
 
 

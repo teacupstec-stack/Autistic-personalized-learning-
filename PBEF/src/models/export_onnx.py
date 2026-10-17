@@ -32,11 +32,15 @@ def export_to_onnx(
     print(f"[export_onnx] Loading checkpoint from: {checkpoint_path}")
     model = TemporalForecaster(interaction_dim=8, visual_dim=3, num_classes=3, conv_channels=32)
     
-    if os.path.exists(checkpoint_path):
-        state_dict = torch.load(checkpoint_path, map_location='cpu')
-        model.load_state_dict(state_dict)
-    else:
-        print(f"[export_onnx] Warning: Checkpoint not found at {checkpoint_path}. Exporting initialized architecture.")
+    if not os.path.exists(checkpoint_path):
+        raise FileNotFoundError(
+            f"[export_onnx] Critical Error: Checkpoint not found at '{checkpoint_path}'. "
+            f"Refusing to export untrained random model to ONNX."
+        )
+
+    state_dict = torch.load(checkpoint_path, map_location='cpu')
+    model.load_state_dict(state_dict)
+    print(f"[export_onnx] Successfully loaded trained weights from {checkpoint_path}")
 
     if hasattr(sys.stdout, 'reconfigure'):
         sys.stdout.reconfigure(encoding='utf-8')
@@ -75,6 +79,14 @@ def export_to_onnx(
         session = ort.InferenceSession(output_onnx_path, providers=['CPUExecutionProvider'])
         input_name = session.get_inputs()[0].name
 
+        # Load an actual preprocessed window from pipeline if available
+        real_window = None
+        if os.path.exists("data/synthetic/windows.npz"):
+            npz = np.load("data/synthetic/windows.npz")
+            if 'X' in npz and len(npz['X']) > 0:
+                # Transpose from [1, 30, 11] to [1, 11, 30] for model
+                real_window = torch.tensor(npz['X'][0:1], dtype=torch.float32).permute(0, 2, 1)
+
         test_cases = [
             ("Batch size 1 (Standard Random)", torch.randn(1, 11, 30, dtype=torch.float32)),
             ("Batch size 4 (Multi-sample Batch)", torch.randn(4, 11, 30, dtype=torch.float32)),
@@ -84,6 +96,9 @@ def export_to_onnx(
         ]
         # Set visual channels to 0 for missing camera test case
         test_cases[3][1][:, 8:, :] = 0.0
+
+        if real_window is not None:
+            test_cases.append(("Real Preprocessed Pipeline Sample", real_window))
 
         print(f"[export_onnx] Running ONNX Runtime Multi-Case Numerical Parity Verification:")
         for name, tensor_in in test_cases:

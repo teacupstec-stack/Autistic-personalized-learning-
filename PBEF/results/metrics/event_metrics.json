@@ -1,15 +1,38 @@
 {
-  "threshold": 0.37,
+  "threshold": 0.54,
   "horizon_seconds": 20,
   "cooldown_seconds": 15,
-  "total_true_onset_events": 72,
-  "true_positives_matched": 9,
+  "total_true_onset_episodes": 3,
+  "true_positives_matched": 3,
   "false_positives_unmatched": 22,
-  "event_precision": 0.2903,
-  "event_recall": 0.125,
-  "event_f1": 0.1748,
-  "false_alerts_per_hour": 138.95,
-  "mean_usable_lead_time_sec": 4.44,
-  "median_usable_lead_time_sec": 0.0,
-  "total_exposure_hours": 0.158
+  "event_precision": 0.12,
+  "event_recall": 1.0,
+  "event_f1": 0.2143,
+  "false_alerts_per_hour": 163.98,
+  "mean_usable_lead_time_sec": 16.67,
+  "median_usable_lead_time_sec": 15.0,
+  "total_exposure_hours": 0.1342,
+  "per_session_breakdown": [
+    {
+      "session_id": "S_L003_01",
+      "true_onsets": 1,
+      "matched_tp": 1,
+      "false_alerts_fp": 3,
+      "duration_sec": 161.0
+    },
+    {
+      "session_id": "S_L003_02",
+      "true_onsets": 1,
+      "matched_tp": 1,
+      "false_alerts_fp": 10,
+      "duration_sec": 161.0
+    },
+    {
+      "session_id": "S_L003_03",
+      "true_onsets": 1,
+      "matched_tp": 1,
+      "false_alerts_fp": 9,
+      "duration_sec": 161.0
+    }
+  ]
 }

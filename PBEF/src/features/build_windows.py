@@ -83,15 +83,28 @@ def build_session_windows(
         base_mean = np.zeros(raw_features.shape[1], dtype=np.float32)
         base_std = np.ones(raw_features.shape[1], dtype=np.float32)
 
+    # Identify actual true onset timestamps from aligned annotations
+    onset_bins = aligned_df[aligned_df['is_onset'] == 1]['time_bin_start_ms'].to_numpy()
+    if len(onset_bins) > 0:
+        diffs = np.diff(onset_bins)
+        split_indices = np.where(diffs > 10000)[0] + 1
+        episodes = np.split(onset_bins, split_indices)
+        session_onset_times = [int(ep[0]) for ep in episodes]
+    else:
+        session_onset_times = []
+
     windows_X = []
+    windows_X_raw = []
     labels_forecast = []
     labels_state = []
     valid_masks = []
     manifest_rows = []
 
     # t represents the cutoff index (end of input history)
-    # Range: from history_sec to total_bins - forecast_sec
-    for t in range(history_sec, total_bins - forecast_sec + 1, stride_sec):
+    # Start forecasting windows strictly at max(history_sec, calibration_sec)
+    # This prevents temporal feature leakage: calibration period [0, calib) is fully elapsed!
+    start_t = max(history_sec, calibration_sec)
+    for t in range(start_t, total_bins - forecast_sec + 1, stride_sec):
         # 1. Input history strictly in [t - history_sec, t)
         history_slice = raw_features[t - history_sec:t].copy()
 
@@ -126,6 +139,7 @@ def build_session_windows(
         window_id = f"{session_id}_t{t_cutoff_ms}"
 
         windows_X.append(history_normalized)
+        windows_X_raw.append(history_slice)
         labels_forecast.append(has_onset)
         labels_state.append(max(0, current_state_id))
         valid_masks.append(is_valid)
@@ -139,13 +153,15 @@ def build_session_windows(
             'current_state': current_state_str,
             'is_valid': is_valid,
             'has_intervention_ahead': int(has_intervention_in_target),
+            'session_true_onsets': json.dumps(session_onset_times),
         })
 
     if not windows_X:
-        return None, None, None, None, pd.DataFrame()
+        return None, None, None, None, None, pd.DataFrame()
 
     return (
         np.array(windows_X, dtype=np.float32),
+        np.array(windows_X_raw, dtype=np.float32),
         np.array(labels_forecast, dtype=np.int64),
         np.array(labels_state, dtype=np.int64),
         np.array(valid_masks, dtype=np.int64),
@@ -179,6 +195,7 @@ def main():
         return
 
     all_X = []
+    all_X_raw = []
     all_y_forecast = []
     all_y_state = []
     all_masks = []
@@ -188,7 +205,7 @@ def main():
         df = pd.read_csv(file_path)
         if len(df) < args.history_sec + args.forecast_sec:
             continue
-        X, y_forecast, y_state, mask, manifest_df = build_session_windows(
+        X, X_raw, y_forecast, y_state, mask, manifest_df = build_session_windows(
             df,
             history_sec=args.history_sec,
             forecast_sec=args.forecast_sec,
@@ -196,6 +213,7 @@ def main():
         )
         if X is not None and len(X) > 0:
             all_X.append(X)
+            all_X_raw.append(X_raw)
             all_y_forecast.append(y_forecast)
             all_y_state.append(y_state)
             all_masks.append(mask)
@@ -206,6 +224,7 @@ def main():
         return
 
     combined_X = np.concatenate(all_X, axis=0)
+    combined_X_raw = np.concatenate(all_X_raw, axis=0)
     combined_y_forecast = np.concatenate(all_y_forecast, axis=0)
     combined_y_state = np.concatenate(all_y_state, axis=0)
     combined_masks = np.concatenate(all_masks, axis=0)
@@ -218,6 +237,7 @@ def main():
     np.savez_compressed(
         npz_path,
         X=combined_X,
+        X_raw=combined_X_raw,
         y_forecast=combined_y_forecast,
         y_state=combined_y_state,
         mask=combined_masks,

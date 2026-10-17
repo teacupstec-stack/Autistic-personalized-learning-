@@ -62,11 +62,13 @@ class TemporalForecaster(nn.Module):
         interaction_dim: int = 8,
         visual_dim: int = 3,
         num_classes: int = 3,
-        conv_channels: int = 32
+        conv_channels: int = 32,
+        use_gate: bool = True
     ):
         super().__init__()
         self.interaction_dim = interaction_dim
         self.visual_dim = visual_dim
+        self.use_gate = use_gate
 
         # 1. Interaction Temporal Convolutional Encoder
         self.interaction_encoder = nn.Sequential(
@@ -80,23 +82,28 @@ class TemporalForecaster(nn.Module):
             nn.AdaptiveAvgPool1d(1)
         )
 
-        # 2. Optional Visual Temporal Encoder
-        self.visual_encoder = nn.Sequential(
-            nn.Conv1d(visual_dim, 16, kernel_size=3, padding=1),
-            nn.BatchNorm1d(16),
-            nn.ReLU(),
-            nn.AdaptiveAvgPool1d(1)
-        )
+        if visual_dim > 0:
+            # 2. Optional Visual Temporal Encoder
+            self.visual_encoder = nn.Sequential(
+                nn.Conv1d(visual_dim, 16, kernel_size=3, padding=1),
+                nn.BatchNorm1d(16),
+                nn.ReLU(),
+                nn.AdaptiveAvgPool1d(1)
+            )
 
-        # 3. Reliability Gate
-        # Missing camera data (visual_valid == 0) dynamically zeros out visual influence
-        self.gate_fc = nn.Sequential(
-            nn.Linear(conv_channels + 16, 16),
-            nn.Sigmoid()
-        )
-
-        # Combined representation dimension: conv_channels (32) + gated_visual (16) = 48
-        combined_dim = conv_channels + 16
+            # 3. Reliability Gate
+            if use_gate:
+                self.gate_fc = nn.Sequential(
+                    nn.Linear(conv_channels + 16, 16),
+                    nn.Sigmoid()
+                )
+            else:
+                self.gate_fc = None
+            combined_dim = conv_channels + 16
+        else:
+            self.visual_encoder = None
+            self.gate_fc = None
+            combined_dim = conv_channels
 
         # 4. Future Onset Forecasting Head (Binary logit for 20s horizon)
         self.forecast_head = nn.Sequential(
@@ -114,24 +121,24 @@ class TemporalForecaster(nn.Module):
         )
 
     def forward(self, x: torch.Tensor):
-        # x is [B, F, T] where F = interaction_dim + visual_dim
         x_int = x[:, :self.interaction_dim, :]
-        x_vis = x[:, self.interaction_dim:, :]
+        h_int = self.interaction_encoder(x_int).squeeze(2)
 
-        # Check visual validity mask from feature (visual_valid is first feature of x_vis)
-        # Average validity over the 30-second window
-        vis_valid_mask = torch.mean(x_vis[:, 0:1, :], dim=2)  # [B, 1]
+        if self.visual_dim > 0:
+            x_vis = x[:, self.interaction_dim:self.interaction_dim + self.visual_dim, :]
+            h_vis = self.visual_encoder(x_vis).squeeze(2)
 
-        # Embeddings
-        h_int = self.interaction_encoder(x_int).squeeze(2)  # [B, 32]
-        h_vis = self.visual_encoder(x_vis).squeeze(2)      # [B, 16]
+            if self.use_gate:
+                vis_valid_mask = torch.mean(x_vis[:, 0:1, :], dim=2)
+                gate_input = torch.cat([h_int, h_vis], dim=1)
+                gate_weight = self.gate_fc(gate_input) * vis_valid_mask
+                gated_vis = h_vis * gate_weight
+            else:
+                gated_vis = h_vis
 
-        # Reliability Gate computation
-        gate_input = torch.cat([h_int, h_vis], dim=1)
-        gate_weight = self.gate_fc(gate_input) * vis_valid_mask  # [B, 16]
-
-        gated_vis = h_vis * gate_weight
-        h_combined = torch.cat([h_int, gated_vis], dim=1)  # [B, 48]
+            h_combined = torch.cat([h_int, gated_vis], dim=1)
+        else:
+            h_combined = h_int
 
         forecast_logit = self.forecast_head(h_combined)
         state_logits = self.state_head(h_combined)
@@ -200,8 +207,9 @@ def train_model(
             val_roc_auc = 0.5
 
         if val_pr_auc > best_val_pr_auc:
+            import copy
             best_val_pr_auc = val_pr_auc
-            best_weights = model.state_dict().copy()
+            best_weights = copy.deepcopy(model.state_dict())
             binary_preds = (val_f_preds >= 0.5).astype(int)
             best_metrics = {
                 'epoch': epoch,

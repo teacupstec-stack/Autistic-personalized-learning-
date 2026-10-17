@@ -95,7 +95,7 @@ class TestParticipationForecastingPipeline(unittest.TestCase):
 
         aligned_df = align_session_events(events_df, ann_df, int_df, bin_size_ms=1000)
 
-        X, y_forecast, y_state, mask, manifest = build_session_windows(
+        X, X_raw, y_forecast, y_state, mask, manifest = build_session_windows(
             aligned_df,
             history_sec=30,
             forecast_sec=20,
