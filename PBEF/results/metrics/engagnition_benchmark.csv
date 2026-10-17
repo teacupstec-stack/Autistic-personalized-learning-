@@ -1,0 +1,7 @@
+model_name,model_type,eval_split,pr_auc,roc_auc,f1_score,precision,recall,brier_score,prevalence,threshold
+Prevalence Chance Baseline,Heuristic Prior,Held-out (P06),0.148,0.5,0.0,0.0,0.0,0.148,,
+Logistic Regression (30s Summaries),Linear Baseline,Held-out (P06),0.4096,0.6268,0.3318,0.2,0.9722,0.4302,0.1791,0.17
+TCN Population Baseline (No Personal Calib),Temporal ConvNet,Held-out (P06),0.3266,0.5906,0.3607,0.44,0.3056,0.1913,0.1791,0.74
+TCN Personal Baseline (Interaction + Motion Calibrated),Temporal ConvNet (Personalized),Held-out (P06),0.3213,0.7896,0.0,0.0,0.0,0.1908,0.1791,0.81
+TCN Full Proposed (Personalized + Multimodal Gate),Temporal ConvNet (Multimodal Gate),Held-out (P06),0.3815,0.8354,0.0,0.0,0.0,0.1785,0.1791,0.79
+TCN Ablation: Camera Masked Fallback,Reliability Gate Fallback,Held-out (P06),0.3865,0.7419,0.0,0.0,0.0,0.1426,0.1791,0.79

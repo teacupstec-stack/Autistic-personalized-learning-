@@ -1,0 +1,78 @@
+[
+  {
+    "model_name": "Prevalence Chance Baseline",
+    "model_type": "Heuristic Prior",
+    "eval_split": "Held-out (P06)",
+    "pr_auc": 0.148,
+    "roc_auc": 0.5,
+    "f1_score": 0.0,
+    "precision": 0.0,
+    "recall": 0.0,
+    "brier_score": 0.148
+  },
+  {
+    "model_name": "Logistic Regression (30s Summaries)",
+    "model_type": "Linear Baseline",
+    "eval_split": "Held-out (P06)",
+    "prevalence": 0.1791,
+    "pr_auc": 0.4096,
+    "roc_auc": 0.6268,
+    "f1_score": 0.3318,
+    "precision": 0.2,
+    "recall": 0.9722,
+    "brier_score": 0.4302,
+    "threshold": 0.17
+  },
+  {
+    "model_name": "TCN Population Baseline (No Personal Calib)",
+    "model_type": "Temporal ConvNet",
+    "eval_split": "Held-out (P06)",
+    "prevalence": 0.1791,
+    "pr_auc": 0.3266,
+    "roc_auc": 0.5906,
+    "f1_score": 0.3607,
+    "precision": 0.44,
+    "recall": 0.3056,
+    "brier_score": 0.1913,
+    "threshold": 0.74
+  },
+  {
+    "model_name": "TCN Personal Baseline (Interaction + Motion Calibrated)",
+    "model_type": "Temporal ConvNet (Personalized)",
+    "eval_split": "Held-out (P06)",
+    "prevalence": 0.1791,
+    "pr_auc": 0.3213,
+    "roc_auc": 0.7896,
+    "f1_score": 0.0,
+    "precision": 0.0,
+    "recall": 0.0,
+    "brier_score": 0.1908,
+    "threshold": 0.81
+  },
+  {
+    "model_name": "TCN Full Proposed (Personalized + Multimodal Gate)",
+    "model_type": "Temporal ConvNet (Multimodal Gate)",
+    "eval_split": "Held-out (P06)",
+    "prevalence": 0.1791,
+    "pr_auc": 0.3815,
+    "roc_auc": 0.8354,
+    "f1_score": 0.0,
+    "precision": 0.0,
+    "recall": 0.0,
+    "brier_score": 0.1785,
+    "threshold": 0.79
+  },
+  {
+    "model_name": "TCN Ablation: Camera Masked Fallback",
+    "model_type": "Reliability Gate Fallback",
+    "eval_split": "Held-out (P06)",
+    "prevalence": 0.1791,
+    "pr_auc": 0.3865,
+    "roc_auc": 0.7419,
+    "f1_score": 0.0,
+    "precision": 0.0,
+    "recall": 0.0,
+    "brier_score": 0.1426,
+    "threshold": 0.79
+  }
+]
