@@ -33,6 +33,7 @@ data/processed/*
 # Synthetic data is permitted for verification, but ignore large generated bundles
 data/synthetic/*.npz
 data/synthetic/windows.npz
+data/synthetic/demo_events_*
 
 # Heavy Model Checkpoints & Weights
 models/**/*.pt

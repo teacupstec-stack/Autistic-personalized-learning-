@@ -1,8 +1,8 @@
 {
-  "epoch": 13,
-  "val_pr_auc": 0.2898,
-  "val_roc_auc": 0.746,
-  "f1_score": 0.3137,
-  "precision": 0.186,
+  "epoch": 4,
+  "val_pr_auc": 0.4904,
+  "val_roc_auc": 0.8257,
+  "f1_score": 0.3504,
+  "precision": 0.2124,
   "recall": 1.0
 }
