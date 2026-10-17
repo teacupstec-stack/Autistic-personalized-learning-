@@ -3,39 +3,47 @@ engagnition_adapter.py
 ======================
 Component 3 (PBEF) — Public Dataset Ingestion Adapter for Engagnition
 
-Processes the Engagnition dataset (Nature Scientific Data 2024, N=57 autistic children)
-for the Personal-Baseline Participation Forecasting (PBEF) task.
+Processes the REAL Engagnition dataset (Nature Scientific Data 2024, N=57 autistic children,
+38 experimental participants with complete multimodal time-series).
 
-DATASET SCHEMA & MODALITIES:
-  - Participants: P01 to P57 (children with ASD)
-  - Behavioral / Serious Game Stream: 'Defeat the Monster' (game events, hit/miss, pause intervals)
-  - Movement Stream: Empatica E4 3D Accelerometer (motion intensity & physical regulation)
-  - Physiological Wearable Stream: Electrodermal Activity (GSR), Skin Temperature (ST)
-  - Video / Gaze Stream: Screen gaze fixation ratio & validity mask
-  - Ground-Truth Annotations: Ternary engagement scale (High=2, Medium=1, Low/Disengaged=0)
-  - Interventions: Educator / therapist assistance timestamps
+DATASET ARCHITECTURE & REAL MODALITIES:
+  - Participants: P20 to P38 (LPE condition), P39 to P57 (HPE condition) -> 38 participants
+  - Time Synchronization: All streams aligned to SGTime (Serious Game Time in seconds)
+  - Raw Data Streams per participant:
+      1. EngagementData.csv: Ground-truth expert engagement (2=High, 1=Medium, 0=Low/Disengaged)
+      2. PerformanceData.csv: Cognitive/motor game events & hits
+      3. GazeData.csv: Eye gaze fixation (1=target/screen, 0=looking away)
+      4. E4AccData.csv: Empatica E4 3-axis Accelerometer & Acc_SVM (physical movement magnitude)
+      5. E4GsrData.csv: Empatica E4 Electrodermal Activity (GSR in uS)
+      6. E4TmpData.csv: Empatica E4 Skin Temperature (ST in Celsius)
+      7. InterventionData.xlsx: Therapist discrete & continuous intervention timestamps
+
+STANDARDIZED 11-CHANNEL TENSOR REPRESENTATION:
+  Interaction & Physiological Stream (Channels 0..7):
+    - 0: performance_count (game interaction events per second)
+    - 1: inactivity_sec (seconds since last game interaction)
+    - 2: acc_svm_mean (physical motion intensity)
+    - 3: acc_svm_std (motor variability / movement jerk)
+    - 4: gsr_mean (electrodermal activity / autonomic arousal)
+    - 5: st_mean (peripheral skin temperature)
+    - 6: physio_valid (1 if E4 wearable active, 0 if missing)
+    - 7: condition_hpe (1 if HPE condition, 0 if LPE condition)
+  Visual & Gaze Stream (Channels 8..10):
+    - 8: visual_valid (1 if camera gaze active, 0 if missing)
+    - 9: gaze_ratio (screen gaze fixation ratio in second bin)
+    - 10: gaze_away_ratio (fraction looking away: 1.0 - gaze_ratio)
 
 FORECASTING TARGET SPECIFICATION:
-  - Input Window: 30 seconds of temporal history (t - 30s to t)
+  - Input Window: 30 seconds of historical observations (t - 30s to t)
   - Target Horizon: 20 seconds into the future (t to t + 20s)
-  - Forecast Label (y_forecast): Binary indicator (1 if engagement transitions to Low or
-    therapist intervention occurs within the next 20s, 0 otherwise)
-  - Personal Baseline: First 60s of session used for baseline calibration (t >= 60s strictly)
-  - Reliability Gating: Explicit masks for missing video/gaze and missing wearable sensors
-
-USAGE:
-  1. Inspect downloaded Figshare data:
-     python src/data/engagnition_adapter.py --data_dir data/engagnition/raw --inspect
-
-  2. Generate schema-compliant verification samples (if Figshare download is in progress):
-     python src/data/engagnition_adapter.py --generate_sample --num_participants 6 --output_dir data/engagnition
-
-  3. Build 30s/20s forecasting windows:
-     python src/data/engagnition_adapter.py --data_dir data/engagnition --build_windows --output_dir data/engagnition
+  - Forecast Label (y_forecast): Binary flag (1 if Engagement drops to 0 or therapist
+    intervention occurs in the 20s future horizon, 0 otherwise)
+  - Calibration: Strictly starts at t >= 60s (0% intra-session calibration leakage)
 """
 
 import os
 import sys
+import glob
 import json
 import argparse
 import numpy as np
@@ -43,197 +51,200 @@ import pandas as pd
 
 
 ENGAGNITION_FEATURES = [
-    'game_event_count',       # 0: Interaction pace
-    'hit_count',              # 1: Successful motor/cognitive actions
-    'miss_count',             # 2: Errors or failed attempts
-    'pause_duration_ms',      # 3: Motor hesitation / inaction time
-    'accel_magnitude_mean',   # 4: E4 physical movement / motor activity
-    'gsr_mean',               # 5: E4 Electrodermal activity (arousal)
-    'skin_temp_mean',         # 6: E4 skin temperature
-    'physio_valid',           # 7: Wearable sensor validity mask (0 or 1)
-    'gaze_fixation_ratio',    # 8: Camera screen gaze fixation ratio
-    'head_pose_yaw_var',      # 9: Head movement variability
-    'visual_valid'            # 10: Camera stream validity mask (0 or 1)
+    'performance_count',
+    'inactivity_sec',
+    'acc_svm_mean',
+    'acc_svm_std',
+    'gsr_mean',
+    'st_mean',
+    'physio_valid',
+    'condition_hpe',
+    'visual_valid',
+    'gaze_ratio',
+    'gaze_away_ratio'
 ]
 
 
-def generate_synthetic_engagnition(output_dir: str, num_participants: int = 6, session_len_sec: int = 300, seed: int = 42):
-    """
-    Generates realistic, schema-identical sample files matching Engagnition's exact
-    directory structure and CSV formats for pipeline testing prior to Figshare download.
-    """
-    np.random.seed(seed)
-    os.makedirs(output_dir, exist_ok=True)
-    raw_dir = os.path.join(output_dir, "raw")
-    os.makedirs(raw_dir, exist_ok=True)
-
-    print(f"[Engagnition] Generating {num_participants} schema-compliant participant records in {raw_dir}...")
-
-    all_participants_meta = []
-
-    for p_idx in range(1, num_participants + 1):
-        pid = f"P{p_idx:02d}"
-        p_dir = os.path.join(raw_dir, pid)
-        os.makedirs(p_dir, exist_ok=True)
-
-        total_sec = session_len_sec
-        timestamps = np.arange(0, total_sec * 1000, 1000)  # 1 Hz aggregated bins
-
-        # 1. E4 Accelerometer Data (x, y, z, magnitude)
-        accel_base = np.random.uniform(0.8, 1.2)
-        acc_mag = np.random.normal(accel_base, 0.2, len(timestamps))
-        acc_mag = np.clip(acc_mag, 0.1, 3.5)
-
-        # 2. E4 GSR (Electrodermal activity) in microSiemens
-        gsr_base = np.random.uniform(2.0, 8.0)
-        gsr = gsr_base + np.cumsum(np.random.normal(0, 0.05, len(timestamps)))
-        gsr = np.clip(gsr, 0.5, 20.0)
-
-        # 3. E4 Skin Temperature in Celsius
-        st_base = np.random.uniform(32.0, 34.5)
-        st = st_base + np.cumsum(np.random.normal(0, 0.01, len(timestamps)))
-
-        # 4. Behavioral game events (Defeat the Monster exergame)
-        game_events = []
-        hits = []
-        misses = []
-        pauses = []
-        gaze = []
-        head_yaw = []
-        labels = []  # Ternary: 2 = High, 1 = Medium, 0 = Low (Disengaged)
-
-        # Pick 1 or 2 decrease / disengagement episodes (e.g., around t=120s to t=160s)
-        onset_sec = int(np.random.uniform(90, 150))
-        decrease_len = int(np.random.uniform(25, 45))
-        onset_end = onset_sec + decrease_len
-
-        for sec in range(total_sec):
-            in_decrease = (onset_sec <= sec < onset_end)
-            in_calib = (sec < 60)
-
-            if in_decrease:
-                # Disengaged state: low actions, high pauses, misses, low gaze fixation
-                state = 0  # Low / Disengaged
-                ev = np.random.choice([0, 1], p=[0.7, 0.3])
-                h = 0 if ev == 0 else (1 if np.random.rand() < 0.3 else 0)
-                m = ev - h
-                p = int(np.random.uniform(1500, 3000))
-                g = float(np.random.uniform(0.1, 0.45))
-                y_var = float(np.random.uniform(15.0, 35.0))
-            elif in_calib:
-                state = 2  # Baseline Active / High
-                ev = np.random.choice([1, 2, 3], p=[0.3, 0.5, 0.2])
-                h = int(np.random.binomial(ev, 0.85))
-                m = ev - h
-                p = int(np.random.uniform(200, 900))
-                g = float(np.random.uniform(0.7, 0.98))
-                y_var = float(np.random.uniform(2.0, 8.0))
-            else:
-                # Typical active/medium play
-                state = np.random.choice([1, 2], p=[0.4, 0.6])
-                ev = np.random.choice([1, 2], p=[0.5, 0.5])
-                h = int(np.random.binomial(ev, 0.75))
-                m = ev - h
-                p = int(np.random.uniform(400, 1200))
-                g = float(np.random.uniform(0.6, 0.92))
-                y_var = float(np.random.uniform(4.0, 12.0))
-
-            game_events.append(ev)
-            hits.append(h)
-            misses.append(m)
-            pauses.append(p)
-            gaze.append(round(g, 3))
-            head_yaw.append(round(y_var, 2))
-            labels.append(state)
-
-        # 5. Create intervention near end of decrease
-        interventions = []
-        interv_sec = onset_end - int(np.random.uniform(3, 7))
-        interventions.append({
-            'participant_id': pid,
-            'time_ms': interv_sec * 1000,
-            'type': 'therapist_physical_redirect',
-            'notes': 'Therapist verbal prompt and monster target repositioning'
-        })
-        pd.DataFrame(interventions).to_csv(os.path.join(p_dir, "interventions.csv"), index=False)
-
-        # 6. Save combined synchronized timeline CSV
-        timeline_df = pd.DataFrame({
-            'participant_id': pid,
-            'time_bin_start_ms': timestamps,
-            'time_bin_end_ms': timestamps + 1000,
-            'game_event_count': game_events,
-            'hit_count': hits,
-            'miss_count': misses,
-            'pause_duration_ms': pauses,
-            'accel_magnitude_mean': np.round(acc_mag, 3),
-            'gsr_mean': np.round(gsr, 3),
-            'skin_temp_mean': np.round(st, 2),
-            'physio_valid': 1,  # E4 worn
-            'gaze_fixation_ratio': gaze,
-            'head_pose_yaw_var': head_yaw,
-            'visual_valid': 1 if (p_idx % 2 == 1) else 0,  # Simulate some participants with camera disabled
-            'engagement_state': labels  # 2: High, 1: Medium, 0: Low/Disengaged
-        })
-        timeline_df.to_csv(os.path.join(p_dir, f"{pid}_timeline.csv"), index=False)
-
-        all_participants_meta.append({
-            'participant_id': pid,
-            'total_duration_sec': total_sec,
-            'has_visual': int(p_idx % 2 == 1),
-            'has_wearable': 1,
-            'decrease_onset_sec': onset_sec,
-            'decrease_end_sec': onset_end
-        })
-
-    pd.DataFrame(all_participants_meta).to_csv(os.path.join(output_dir, "participants_metadata.csv"), index=False)
-    print(f"[Engagnition] Successfully generated {num_participants} participant sessions in {output_dir}")
+def load_interventions_map(raw_dir: str):
+    """Loads therapist intervention timestamps from InterventionData.xlsx."""
+    int_file = os.path.join(raw_dir, 'InterventionData.xlsx')
+    interventions_by_p = {}
+    if os.path.exists(int_file):
+        try:
+            df_int = pd.read_excel(int_file, header=1)
+            df_int['Participants'] = df_int['Participants'].ffill()
+            for p, grp in df_int.groupby('Participants'):
+                times = pd.to_numeric(grp['The time when intervention occurs (seconds)'], errors='coerce').dropna().tolist()
+                interventions_by_p[str(p).strip()] = sorted(times)
+        except Exception as e:
+            print(f"[Warning] Could not parse InterventionData.xlsx: {e}")
+    return interventions_by_p
 
 
 def inspect_engagnition_data(data_dir: str):
-    """
-    Audits an Engagnition directory to report cohort size, sampling consistency,
-    missing streams, and label distributions.
-    """
+    """Audits the extracted real Engagnition dataset."""
     raw_dir = os.path.join(data_dir, "raw") if os.path.exists(os.path.join(data_dir, "raw")) else data_dir
-    p_dirs = [d for d in os.listdir(raw_dir) if os.path.isdir(os.path.join(raw_dir, d)) and d.startswith("P")]
+    interventions = load_interventions_map(raw_dir)
 
-    print("\n" + "=" * 65)
-    print("  ENGAGNITION DATASET AUDIT & INSPECTION REPORT")
-    print("=" * 65)
-    print(f"Directory: {raw_dir}")
-    print(f"Identified Participant Sessions: {len(p_dirs)} ({sorted(p_dirs)[:10]}...)")
+    all_participants = []
+    for cond in ['HPE condition', 'LPE condition']:
+        cond_dir = os.path.join(raw_dir, cond)
+        if os.path.exists(cond_dir):
+            for pdir in sorted(glob.glob(os.path.join(cond_dir, 'P*'))):
+                pid = os.path.basename(pdir)
+                eng_file = os.path.join(pdir, 'EngagementData.csv')
+                if os.path.exists(eng_file):
+                    all_participants.append((cond, pid, pdir))
 
-    if not p_dirs:
-        print("[Warning] No participant directories (P01, P02...) found in directory.")
+    print("\n" + "=" * 70)
+    print("  REAL ENGAGNITION DATASET AUDIT (NATURE SCIENTIFIC DATA 2024)")
+    print("=" * 70)
+    print(f"Dataset root: {raw_dir}")
+    print(f"Total Multimodal Participant Sessions: {len(all_participants)}")
+
+    if not all_participants:
+        print("[Error] No participant folders found. Please extract 'Engagnition Dataset.zip' into data/engagnition/raw.")
         return
 
-    total_bins = 0
-    total_low = 0
-    total_med = 0
-    total_high = 0
-    participants_with_visual = 0
+    total_duration = 0
+    total_low_bins = 0
+    total_med_bins = 0
+    total_high_bins = 0
 
-    for pid in sorted(p_dirs):
-        p_path = os.path.join(raw_dir, pid)
-        timeline_files = [f for f in os.listdir(p_path) if f.endswith("_timeline.csv") or f == "timeline.csv"]
-        if timeline_files:
-            df = pd.read_csv(os.path.join(p_path, timeline_files[0]))
-            total_bins += len(df)
-            counts = df['engagement_state'].value_counts()
-            total_low += counts.get(0, 0)
-            total_med += counts.get(1, 0)
-            total_high += counts.get(2, 0)
-            if 'visual_valid' in df.columns and df['visual_valid'].max() > 0:
-                participants_with_visual += 1
+    p_summaries = []
+    for cond, pid, pdir in all_participants:
+        df_eng = pd.read_csv(os.path.join(pdir, 'EngagementData.csv'))
+        max_t = float(df_eng['SGTime'].max())
+        counts = df_eng['Engagement'].value_counts().to_dict()
+        interv_count = len(interventions.get(pid, []))
 
-    print(f"Total 1-second Bins: {total_bins} ({total_bins / 3600:.2f} hours)")
-    print(f"Engagement Label Breakdown:")
-    print(f"  - High Engagement (State 2):    {total_high} bins ({total_high/max(1, total_bins)*100:.1f}%)")
-    print(f"  - Medium Engagement (State 1):  {total_med} bins ({total_med/max(1, total_bins)*100:.1f}%)")
-    print(f"  - Low / Disengaged (State 0):   {total_low} bins ({total_low/max(1, total_bins)*100:.1f}%)")
-    print(f"Camera Stream Availability: {participants_with_visual}/{len(p_dirs)} participants")
-    print("=" * 65 + "\n")
+        total_duration += max_t
+        p_summaries.append({
+            'Participant': pid,
+            'Condition': 'HPE' if 'HPE' in cond else 'LPE',
+            'Duration_s': round(max_t, 1),
+            'Low_Pct': round(counts.get(0, 0) / len(df_eng) * 100, 1),
+            'Interventions': interv_count
+        })
+
+    df_p = pd.DataFrame(p_summaries)
+    print(f"\nCohort Overview:")
+    print(f"  - Total Recorded Time: {total_duration / 3600:.2f} hours (Mean session: {total_duration / len(all_participants):.1f}s)")
+    print(f"  - Participants with Low Engagement (0): {len(df_p[df_p['Low_Pct'] > 0])} / {len(df_p)}")
+    print(f"  - Participants with Therapist Interventions: {len(df_p[df_p['Interventions'] > 0])} / {len(df_p)}")
+    print(f"\nParticipant Sample Distribution (First 10):")
+    print(df_p.head(10).to_string(index=False))
+    print("=" * 70 + "\n")
+
+
+def process_single_participant(cond: str, pid: str, pdir: str, interventions: list):
+    """Aggregates all continuous streams of a participant into synchronized 1-second bins."""
+    df_eng = pd.read_csv(os.path.join(pdir, 'EngagementData.csv'))
+    max_t = int(df_eng['SGTime'].max())
+    if max_t < 70:
+        return None  # Too short for 60s calibration + 20s horizon
+
+    sec_bins = np.arange(0, max_t + 1)
+    n_bins = len(sec_bins)
+
+    # 1. Engagement state (mode per second)
+    df_eng['sec'] = np.floor(df_eng['SGTime']).astype(int)
+    eng_grouped = df_eng[df_eng['sec'] <= max_t].groupby('sec')['Engagement'].agg(lambda s: s.mode().iloc[0])
+    eng_state = eng_grouped.reindex(sec_bins, fill_value=1).to_numpy()
+
+    # 2. Performance game events (count per second)
+    perf_file = os.path.join(pdir, 'PerformanceData.csv')
+    perf_counts = np.zeros(n_bins, dtype=np.float32)
+    if os.path.exists(perf_file):
+        df_perf = pd.read_csv(perf_file)
+        if not df_perf.empty and 'SGTime' in df_perf.columns:
+            df_perf['sec'] = np.floor(df_perf['SGTime']).astype(int)
+            p_cnt = df_perf[(df_perf['sec'] >= 0) & (df_perf['sec'] <= max_t)].groupby('sec').size()
+            perf_counts = p_cnt.reindex(sec_bins, fill_value=0).to_numpy().astype(np.float32)
+
+    # Inactivity seconds (time since last interaction)
+    inactivity = np.zeros(n_bins, dtype=np.float32)
+    last_act = 0
+    for i in range(n_bins):
+        if perf_counts[i] > 0:
+            last_act = i
+        inactivity[i] = float(i - last_act)
+
+    # 3. E4 Accelerometer (Acc_SVM mean and std per second)
+    acc_file = os.path.join(pdir, 'E4AccData.csv')
+    acc_mean = np.zeros(n_bins, dtype=np.float32)
+    acc_std = np.zeros(n_bins, dtype=np.float32)
+    has_e4 = 0
+    if os.path.exists(acc_file):
+        df_acc = pd.read_csv(acc_file)
+        if not df_acc.empty and 'SGTime' in df_acc.columns and 'Acc_SVM' in df_acc.columns:
+            has_e4 = 1
+            df_acc['sec'] = np.floor(df_acc['SGTime']).astype(int)
+            acc_g = df_acc[(df_acc['sec'] >= 0) & (df_acc['sec'] <= max_t)].groupby('sec')['Acc_SVM']
+            m = acc_g.mean().reindex(sec_bins).ffill().bfill().to_numpy()
+            s = acc_g.std().reindex(sec_bins).fillna(0.0).to_numpy()
+            acc_mean = np.nan_to_num(m, nan=64.0).astype(np.float32)
+            acc_std = np.nan_to_num(s, nan=1.0).astype(np.float32)
+
+    # 4. E4 GSR (EDA)
+    gsr_file = os.path.join(pdir, 'E4GsrData.csv')
+    gsr_mean = np.zeros(n_bins, dtype=np.float32)
+    if os.path.exists(gsr_file):
+        df_gsr = pd.read_csv(gsr_file)
+        if not df_gsr.empty and 'SGTime' in df_gsr.columns and 'GSR' in df_gsr.columns:
+            has_e4 = 1
+            df_gsr['sec'] = np.floor(df_gsr['SGTime']).astype(int)
+            g_mean = df_gsr[(df_gsr['sec'] >= 0) & (df_gsr['sec'] <= max_t)].groupby('sec')['GSR'].mean()
+            gsr_mean = np.nan_to_num(g_mean.reindex(sec_bins).ffill().bfill().to_numpy(), nan=2.0).astype(np.float32)
+
+    # 5. E4 Skin Temperature
+    tmp_file = os.path.join(pdir, 'E4TmpData.csv')
+    st_mean = np.zeros(n_bins, dtype=np.float32)
+    if os.path.exists(tmp_file):
+        df_tmp = pd.read_csv(tmp_file)
+        col = 'ST' if 'ST' in df_tmp.columns else ('Tmp' if 'Tmp' in df_tmp.columns else df_tmp.columns[-1])
+        df_tmp['sec'] = np.floor(df_tmp['SGTime']).astype(int)
+        t_mean = df_tmp[(df_tmp['sec'] >= 0) & (df_tmp['sec'] <= max_t)].groupby('sec')[col].mean()
+        st_mean = np.nan_to_num(t_mean.reindex(sec_bins).ffill().bfill().to_numpy(), nan=32.0).astype(np.float32)
+
+    # 6. Gaze Data (fraction of screen gaze fixation)
+    gaze_file = os.path.join(pdir, 'GazeData.csv')
+    gaze_ratio = np.ones(n_bins, dtype=np.float32) * 0.8
+    has_gaze = 0
+    if os.path.exists(gaze_file):
+        df_gaze = pd.read_csv(gaze_file)
+        if not df_gaze.empty and 'SGTime' in df_gaze.columns and 'Gaze' in df_gaze.columns:
+            has_gaze = 1
+            df_gaze['sec'] = np.floor(df_gaze['SGTime']).astype(int)
+            gz = df_gaze[(df_gaze['sec'] >= 0) & (df_gaze['sec'] <= max_t)].groupby('sec')['Gaze'].mean()
+            gaze_ratio = np.nan_to_num(gz.reindex(sec_bins).ffill().bfill().to_numpy(), nan=0.8).astype(np.float32)
+
+    gaze_away = (1.0 - gaze_ratio).astype(np.float32)
+    cond_hpe = 1.0 if 'HPE' in cond else 0.0
+
+    # Build 11-channel feature matrix
+    feature_matrix = np.column_stack([
+        perf_counts,                 # 0
+        inactivity,                  # 1
+        acc_mean,                    # 2
+        acc_std,                     # 3
+        gsr_mean,                    # 4
+        st_mean,                     # 5
+        np.full(n_bins, has_e4),     # 6: physio_valid
+        np.full(n_bins, cond_hpe),   # 7: condition_hpe
+        np.full(n_bins, has_gaze),   # 8: visual_valid
+        gaze_ratio,                  # 9: gaze_ratio
+        gaze_away                    # 10: gaze_away_ratio
+    ])
+
+    return {
+        'participant_id': pid,
+        'condition': cond,
+        'feature_matrix': feature_matrix,
+        'engagement_state': eng_state,
+        'interventions': interventions,
+        'duration_sec': max_t
+    }
 
 
 def build_engagnition_windows(
@@ -245,16 +256,26 @@ def build_engagnition_windows(
     calib_sec: int = 60
 ):
     """
-    Extracts strictly non-leaking overlapping windows from Engagnition timelines:
-      - Window input: [t - history_sec, t)
-      - Calibration: t >= max(history_sec, calib_sec) to avoid calibration leakage
-      - Forecast target: binary flag indicating if engagement drops to 0 (Low) in [t, t + forecast_sec)
+    Extracts strictly non-leaking overlapping windows from the real Engagnition cohort.
+    Enforces personal baseline calibration for t >= max(history_sec, calib_sec) = 60s.
     """
     raw_dir = os.path.join(data_dir, "raw") if os.path.exists(os.path.join(data_dir, "raw")) else data_dir
-    p_dirs = [d for d in os.listdir(raw_dir) if os.path.isdir(os.path.join(raw_dir, d)) and d.startswith("P")]
+    interventions_map = load_interventions_map(raw_dir)
 
-    if not p_dirs:
+    all_participants = []
+    for cond in ['HPE condition', 'LPE condition']:
+        cond_dir = os.path.join(raw_dir, cond)
+        if os.path.exists(cond_dir):
+            for pdir in sorted(glob.glob(os.path.join(cond_dir, 'P*'))):
+                pid = os.path.basename(pdir)
+                eng_file = os.path.join(pdir, 'EngagementData.csv')
+                if os.path.exists(eng_file):
+                    all_participants.append((cond, pid, pdir))
+
+    if not all_participants:
         raise FileNotFoundError(f"No participant folders found in {raw_dir}")
+
+    print(f"\n[Engagnition] Processing real multimodal time-series for {len(all_participants)} participants...")
 
     all_X = []
     all_X_raw = []
@@ -265,69 +286,63 @@ def build_engagnition_windows(
 
     start_t = max(history_sec, calib_sec)
 
-    for pid in sorted(p_dirs):
-        p_path = os.path.join(raw_dir, pid)
-        timeline_files = [f for f in os.listdir(p_path) if f.endswith("_timeline.csv") or f == "timeline.csv"]
-        if not timeline_files:
+    for cond, pid, pdir in all_participants:
+        intervs = interventions_map.get(pid, [])
+        session_data = process_single_participant(cond, pid, pdir, intervs)
+        if session_data is None:
             continue
 
-        df = pd.read_csv(os.path.join(p_path, timeline_files[0]))
+        raw_feat = session_data['feature_matrix']
+        eng = session_data['engagement_state']
+        total_bins = session_data['duration_sec']
 
-        # Interventions
-        interv_file = os.path.join(p_path, "interventions.csv")
-        interv_times = []
-        if os.path.exists(interv_file):
-            idf = pd.read_csv(interv_file)
-            if not idf.empty and 'time_ms' in idf.columns:
-                interv_times = idf['time_ms'].tolist()
-
-        raw_features = df[ENGAGNITION_FEATURES].to_numpy(dtype=np.float32)
-        total_bins = len(df)
-
-        # Baseline calibration statistics (first calib_sec bins)
+        # Personal Baseline Calibration (First 60s of this participant)
         calib_bins = min(total_bins, calib_sec)
-        base_mean = np.mean(raw_features[:calib_bins], axis=0)
-        base_std = np.std(raw_features[:calib_bins], axis=0) + 1e-5
+        base_mean = np.mean(raw_feat[:calib_bins], axis=0)
+        base_std = np.std(raw_feat[:calib_bins], axis=0) + 1e-5
 
-        # Detect discrete onset episode start times in this participant
-        onset_mask = (df['engagement_state'] == 0).to_numpy()
-        # Find rising edge where state becomes 0
+        # Detect discrete onset timestamps for this participant
+        onset_mask = (eng == 0)
         rising_edges = np.where((onset_mask[1:] == True) & (onset_mask[:-1] == False))[0] + 1
-        true_onset_times = df['time_bin_start_ms'].iloc[rising_edges].tolist()
+        true_onset_times = [int(edge * 1000) for edge in rising_edges]
 
         for t in range(start_t, total_bins - forecast_sec + 1, stride_sec):
-            history_slice = raw_features[t - history_sec:t].copy()
+            # 1. 30s Input History
+            history_slice = raw_feat[t - history_sec:t].copy()
 
-            # Personal Baseline Normalization:
-            # Normalize interaction and physical movement channels (indices 0..6)
+            # Personal Baseline Normalization (Motion, interaction, and physiological features 0..5)
             history_norm = history_slice.copy()
-            history_norm[:, :7] = (history_slice[:, :7] - base_mean[:7]) / base_std[:7]
+            history_norm[:, :6] = (history_slice[:, :6] - base_mean[:6]) / base_std[:6]
 
-            t_cutoff_ms = int(df['time_bin_start_ms'].iloc[t])
-            current_state = int(df['engagement_state'].iloc[t - 1])
+            t_cutoff_ms = int(t * 1000)
+            current_state = int(eng[t - 1])
 
-            future_slice = df.iloc[t:t + forecast_sec]
-            # Target is 1 if any bin in [t, t + forecast_sec) is Low (0)
-            has_decrease_onset = int((future_slice['engagement_state'] == 0).max() > 0)
+            # 2. 20s Future Forecast Target in [t, t + forecast_sec)
+            future_eng = eng[t:t + forecast_sec]
+            has_low_engagement = int((future_eng == 0).any())
 
-            # Invalidate if teacher intervention occurs in target window
-            t_future_end_ms = t_cutoff_ms + forecast_sec * 1000
-            has_intervention = any(t_cutoff_ms <= it < t_future_end_ms for it in interv_times)
+            # Check if therapist intervention occurs in target window
+            t_future_end_sec = t + forecast_sec
+            has_intervention = any(t <= it < t_future_end_sec for it in intervs)
 
-            is_valid = int(not has_intervention)
+            # Combined target: participation decrease onset (Low engagement OR required therapist prompt)
+            y_f = int(has_low_engagement or has_intervention)
+
+            is_valid = 1  # All bins are valid observation time
 
             window_id = f"{pid}_t{t_cutoff_ms}"
             all_X.append(history_norm)
             all_X_raw.append(history_slice)
-            all_y_forecast.append(has_decrease_onset)
+            all_y_forecast.append(y_f)
             all_y_state.append(current_state)
             all_masks.append(is_valid)
 
             manifest_rows.append({
                 'window_id': window_id,
                 'participant_id': pid,
+                'condition': 'HPE' if 'HPE' in cond else 'LPE',
                 'cutoff_time_ms': t_cutoff_ms,
-                'target_onset': has_decrease_onset,
+                'target_onset': y_f,
                 'current_state': current_state,
                 'is_valid': is_valid,
                 'has_intervention': int(has_intervention),
@@ -353,10 +368,11 @@ def build_engagnition_windows(
     )
     manifest.to_csv(os.path.join(output_dir, "engagnition_window_manifest.csv"), index=False)
 
-    print(f"\n[Engagnition] Window Extraction Complete:")
+    print(f"\n[Engagnition Real Extraction Complete]")
     print(f"  - Total extracted windows: {len(manifest)}")
     print(f"  - Valid eligible windows:  {np.sum(mask == 1)}")
-    print(f"  - Positive forecast rate:  {np.mean(y_forecast[mask == 1])*100:.2f}%")
+    print(f"  - Total unique participants: {manifest['participant_id'].nunique()}")
+    print(f"  - Positive forecast rate:  {np.mean(y_forecast)*100:.2f}%")
     print(f"  - Array Shape (X):         {X.shape}")
     print(f"  - Saved to: {output_dir}/engagnition_windows.npz and manifest.csv\n")
 
@@ -366,14 +382,9 @@ def main():
     parser.add_argument("--data_dir", type=str, default="data/engagnition", help="Path to Engagnition dataset")
     parser.add_argument("--output_dir", type=str, default="data/engagnition", help="Path to output processed windows")
     parser.add_argument("--inspect", action="store_true", help="Inspect and audit raw Engagnition dataset")
-    parser.add_argument("--generate_sample", action="store_true", help="Generate schema-identical verification sample files")
-    parser.add_argument("--num_participants", type=int, default=6, help="Number of sample participants to generate")
     parser.add_argument("--build_windows", action="store_true", help="Extract 30s/20s non-leaking windows")
 
     args = parser.parse_args()
-
-    if args.generate_sample:
-        generate_synthetic_engagnition(args.output_dir, num_participants=args.num_participants)
 
     if args.inspect:
         inspect_engagnition_data(args.data_dir)

@@ -36,6 +36,8 @@ data/synthetic/windows.npz
 data/synthetic/demo_events_*
 data/engagnition/*.npz
 data/engagnition/raw/
+data/engagnition/*.csv
+*.zip
 
 # Heavy Model Checkpoints & Weights
 models/**/*.pt

@@ -177,22 +177,29 @@ def run_engagnition_benchmark(data_path="data/engagnition/engagnition_windows.np
     participants = sorted(manifest['participant_id'].unique())
     print(f"\n[Engagnition Benchmark] Available participants: {participants}")
 
-    # Participant-separated split
-    # Test: Last participant (e.g., P06)
-    # Val: Second to last (e.g., P05)
-    # Train: All remaining (P01..P04)
-    test_pid = participants[-1]
-    val_pid = participants[-2] if len(participants) > 2 else participants[-1]
-    train_pids = participants[:-2] if len(participants) > 2 else participants[:1]
+    # Rigorous multi-participant clinical split (38 participants):
+    # Test split: 6 held-out participants (3 HPE, 3 LPE; mix of active and decrease episodes)
+    # Val split:  6 held-out participants for threshold tuning and early stopping
+    # Train split: 26 participants (complete participant isolation)
+    test_pids = ['P40', 'P41', 'P39', 'P28', 'P35', 'P20']
+    val_pids = ['P53', 'P55', 'P42', 'P27', 'P29', 'P22']
+    
+    # Check if these exact PIDs exist, else fallback to tail slice
+    if not set(test_pids).issubset(set(participants)):
+        test_pids = participants[-6:]
+        val_pids = participants[-12:-6]
+        train_pids = participants[:-12]
+    else:
+        train_pids = [p for p in participants if p not in test_pids and p not in val_pids]
 
-    test_mask = (manifest['participant_id'] == test_pid).to_numpy()
-    val_mask = (manifest['participant_id'] == val_pid).to_numpy()
-    train_mask = (manifest['participant_id'].isin(train_pids)).to_numpy()
+    test_mask = manifest['participant_id'].isin(test_pids).to_numpy()
+    val_mask = manifest['participant_id'].isin(val_pids).to_numpy()
+    train_mask = manifest['participant_id'].isin(train_pids).to_numpy()
 
     print(f"Split Configuration:")
-    print(f"  - Train: {train_pids} ({np.sum(train_mask)} windows)")
-    print(f"  - Val:   {val_pid} ({np.sum(val_mask)} windows)")
-    print(f"  - Test:  {test_pid} ({np.sum(test_mask)} windows)")
+    print(f"  - Train: {len(train_pids)} participants ({np.sum(train_mask)} windows)")
+    print(f"  - Val:   {len(val_pids)} participants ({np.sum(val_mask)} windows): {val_pids}")
+    print(f"  - Test:  {len(test_pids)} participants ({np.sum(test_mask)} windows): {test_pids}")
     print(f"Train Prevalence: {np.mean(y_forecast[train_mask])*100:.2f}% | Test Prevalence: {np.mean(y_forecast[test_mask])*100:.2f}%\n")
 
     test_y = y_forecast[test_mask]
@@ -204,7 +211,7 @@ def run_engagnition_benchmark(data_path="data/engagnition/engagnition_windows.np
     results.append({
         'model_name': 'Prevalence Chance Baseline',
         'model_type': 'Heuristic Prior',
-        'eval_split': f'Held-out ({test_pid})',
+        'eval_split': 'Held-out Test (6 Participants)',
         'pr_auc': round(train_prev, 4),
         'roc_auc': 0.5000,
         'f1_score': 0.0000,
@@ -234,7 +241,7 @@ def run_engagnition_benchmark(data_path="data/engagnition/engagnition_windows.np
     results.append({
         'model_name': 'Logistic Regression (30s Summaries)',
         'model_type': 'Linear Baseline',
-        'eval_split': f'Held-out ({test_pid})',
+        'eval_split': 'Held-out Test (6 Participants)',
         **lr_metrics
     })
 
@@ -249,7 +256,7 @@ def run_engagnition_benchmark(data_path="data/engagnition/engagnition_windows.np
     results.append({
         'model_name': 'TCN Population Baseline (No Personal Calib)',
         'model_type': 'Temporal ConvNet',
-        'eval_split': f'Held-out ({test_pid})',
+        'eval_split': 'Held-out Test (6 Participants)',
         **pop_metrics
     })
 
@@ -264,7 +271,7 @@ def run_engagnition_benchmark(data_path="data/engagnition/engagnition_windows.np
     results.append({
         'model_name': 'TCN Personal Baseline (Interaction + Motion Calibrated)',
         'model_type': 'Temporal ConvNet (Personalized)',
-        'eval_split': f'Held-out ({test_pid})',
+        'eval_split': 'Held-out Test (6 Participants)',
         **pers_metrics
     })
 
@@ -279,7 +286,7 @@ def run_engagnition_benchmark(data_path="data/engagnition/engagnition_windows.np
     results.append({
         'model_name': 'TCN Full Proposed (Personalized + Multimodal Gate)',
         'model_type': 'Temporal ConvNet (Multimodal Gate)',
-        'eval_split': f'Held-out ({test_pid})',
+        'eval_split': 'Held-out Test (6 Participants)',
         **full_metrics
     })
 
@@ -294,7 +301,7 @@ def run_engagnition_benchmark(data_path="data/engagnition/engagnition_windows.np
     results.append({
         'model_name': 'TCN Ablation: Camera Masked Fallback',
         'model_type': 'Reliability Gate Fallback',
-        'eval_split': f'Held-out ({test_pid})',
+        'eval_split': 'Held-out Test (6 Participants)',
         **novis_metrics
     })
 
