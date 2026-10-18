@@ -428,6 +428,8 @@ Evaluated via [`src/evaluation/evaluate_events.py`](src/evaluation/evaluate_even
 
 ## 14. Current Claims Matrix
 
+### 14.1 Synthetic Verification Fixtures (Pipeline Validation)
+
 | Metric / Claim | Reported Value | Source File / Artifact | Data Split Evaluated | Independently Reproduced? |
 | :--- | :---: | :--- | :--- | :---: |
 | **Train Class Prevalence** | `17.02%` | `results/metrics/benchmark_comparison.json` | Training Split (L001/L002) | YES |
@@ -444,8 +446,31 @@ Evaluated via [`src/evaluation/evaluate_events.py`](src/evaluation/evaluate_even
 | **Mean Usable Lead Time** | `16.67s` | `results/metrics/event_metrics.json` | Held-out Test (L003) | YES |
 | **ONNX Max Absolute Error** | `1.19e-07` | Console log / `export_onnx.py` | Multi-batch / masked / real sample | YES |
 
-- **Synthetic vs Real Data:** **100% of the numbers above derive from synthetic verification sessions.** None of these numbers represent verified efficacy on real autistic children.
-- **Fair Comparison:** All test metrics are evaluated on the exact same held-out test participant (`L003`) over 423 windows.
+- **Synthetic Context:** 100% of the numbers in Section 14.1 derive from synthetic verification sessions, used to verify pipeline invariants, zero-leakage temporal slices, and ONNX parity.
+
+---
+
+### 14.2 Public Clinical Benchmark: Engagnition Cohort ($N=37$ Autistic Children)
+
+Evaluated on the public **Engagnition** dataset (*Nature Scientific Data*, 2024; $N=37$ participants, 6,705 non-leaking windows, 3.43 recorded hours) under strict rising-edge onset labeling and $t \ge 90\text{s}$ calibration isolation.
+
+#### A. Audited Model Benchmark (Held-out Test Split, 7 Participants, 1,578 Windows, 7.73% Prevalence):
+| Model Configuration | Model Type | PR-AUC | ROC-AUC | Raw Brier | Calibrated Brier | Scientific Status |
+| :--- | :--- | :---: | :---: | :---: | :---: | :--- |
+| **Prevalence Chance Baseline** | Constant Prior | `0.0773` | `0.5000` | `0.0755` | `0.0755` | Theoretical Reference (`p=0.0127`) |
+| **Population Logistic Regression** | Linear (`balanced`) | `0.1725` | `0.5643` | `0.0714` | `0.0714` | **Valid Population Baseline** (global raw summaries) |
+| **Personalized Logistic Regression** | Linear (`balanced`) | `0.2027` | `0.3821` | `0.0703` | `0.0703` | Anti-predictive (`P41` Shift) |
+| **TCN Population Baseline** | 2-Layer Dilated TCN | `0.0663` | `0.4565` | `0.1761` | `0.1761` | Underperforming (Overfits `P41`) |
+| **TCN Personal Baseline** | 2-Layer Dilated TCN | `0.4709` | `0.9202` | `0.2524` | `0.2524` | Strong Ranking, High Probability Variance |
+| **TCN Full Proposed (Gate + Dropout)** | Multimodal Gate | **`0.4233`** | **`0.9176`** | **`0.0586`** | **`0.0586`** | **Strong Ranking, Calibrated by Gate** |
+| **TCN Camera-Masked Fallback** | Reliability Fallback | `0.4273` | `0.9193` | `0.0544` | `0.0544` | **Graceful Resilience (Gaze Redundant)** |
+
+#### B. Audit Findings & Diagnoses:
+1. **Onset Concentration:** Only 8 of 37 participants (21.6%) experience decrease onsets (29 participants have 0.00% onsets). Top-3 participants (`P53`, `P35`, `P40`) hold 66.9% of all positives. In the test set, 60.7% of positives come from two participants (`P35`, `P28`) across only 99 windows.
+2. **Personal TCN Brier Score (0.2524):** Inspection of predicted probabilities reveals that 100% of test predictions fall into `[0.4558, 0.7371]` (mean: `0.5207`). Predicting $\sim 0.52$ for negative windows (92.27% of the test set) drives the quadratic Brier penalty. The Full Proposed TCN resolves this through multimodal gating and dropout regularization (mean prob: `0.1031`, Brier: **`0.0586`**).
+3. **Multimodal Gaze Contribution:** Permuting gaze channels (8..10) yields $\Delta\text{PR-AUC} = +0.0135$ ($\pm 0.0202$), confirming gaze is redundant in this exergame; the interaction-only pathway is completely sufficient.
+4. **Event Alerts & Lead Time:** 9 of 11 discrete episodes detected (81.82% point estimate; **95% Bootstrap CI: `[54.5%, 100.0%]`**) with **8.67s mean lead time (9.00s median)**. At a clinical threshold $t=0.30$, false alerts drop from 61.47/hr to 23.05/hr with 45.5% recall.
+5. **Leave-One-Participant-Out (LOPO) Across Onset Cohort:** Across 6 valid onset folds (`P53`, `P35`, `P40`, `P41`, `P27`, `P28`), Population Logistic Regression achieves PR-AUC **`0.5284 ± 0.2755`** and ROC-AUC **`0.5842 ± 0.2911`**, while Personal TCN achieves PR-AUC **`0.4915 ± 0.2789`** and ROC-AUC **`0.4256 ± 0.2061`**.
 
 ---
 

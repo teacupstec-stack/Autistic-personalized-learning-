@@ -1,0 +1,8 @@
+Model Name,Architecture,Features,PR-AUC,ROC-AUC,Raw Brier,Calibrated Brier,Scientific Status
+Prevalence Chance Baseline (Train Prior),Heuristic Train Prior,None,0.0773,0.5,0.0755,0.0755,Baseline Reference
+Population Logistic Regression,Linear (Balanced),Globally Standardized Raw Summaries,0.1725,0.5643,0.0714,0.0714,Valid Population Baseline
+Personalized Logistic Regression,Linear (Balanced),Personal-Normalized Summaries (X),0.2027,0.3821,0.0703,0.0703,Anti-predictive (Participant Shift)
+TCN Population Baseline,2-Layer Dilated TCN,Global Standardization (X_pop_norm),0.0663,0.4565,0.1761,0.1761,Underperforming (Overfits Single Train Pos PID)
+TCN Personal Baseline,2-Layer Dilated TCN,Personal Calibration (No Gate),0.4709,0.9202,0.2524,0.2524,"Strong Ranking, Poor Probabilities"
+TCN Full Proposed,TCN + Multimodal Gate + Dropout,Personalized Interaction + Gaze,0.4233,0.9176,0.0586,0.0586,"Strong Ranking, Calibrated by Gate"
+TCN Camera-Masked Fallback,Full TCN (Gaze Zeroed),Interaction Modality Only,0.4273,0.9193,0.0544,0.0544,Graceful Resilience (Gaze Adds No Signal)

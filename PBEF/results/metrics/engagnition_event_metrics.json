@@ -1,0 +1,66 @@
+{
+  "threshold": 0.08,
+  "horizon_seconds": 20,
+  "cooldown_seconds": 15,
+  "total_true_onset_episodes": 11,
+  "true_positives_matched": 9,
+  "false_positives_unmatched": 32,
+  "event_precision": 0.2195,
+  "event_recall": 0.8182,
+  "event_f1": 0.3462,
+  "false_alerts_per_hour": 61.47,
+  "mean_usable_lead_time_sec": 8.67,
+  "median_usable_lead_time_sec": 9.0,
+  "total_exposure_hours": 0.5206,
+  "per_session_breakdown": [
+    {
+      "session_id": "HPE_P39",
+      "true_onsets": 0,
+      "matched_tp": 0,
+      "false_alerts_fp": 10,
+      "duration_sec": 268.0
+    },
+    {
+      "session_id": "HPE_P40",
+      "true_onsets": 4,
+      "matched_tp": 4,
+      "false_alerts_fp": 17,
+      "duration_sec": 521.0
+    },
+    {
+      "session_id": "HPE_P42",
+      "true_onsets": 0,
+      "matched_tp": 0,
+      "false_alerts_fp": 1,
+      "duration_sec": 330.0
+    },
+    {
+      "session_id": "LPE_P20",
+      "true_onsets": 0,
+      "matched_tp": 0,
+      "false_alerts_fp": 0,
+      "duration_sec": 167.0
+    },
+    {
+      "session_id": "LPE_P26",
+      "true_onsets": 0,
+      "matched_tp": 0,
+      "false_alerts_fp": 0,
+      "duration_sec": 357.0
+    },
+    {
+      "session_id": "LPE_P28",
+      "true_onsets": 2,
+      "matched_tp": 1,
+      "false_alerts_fp": 1,
+      "duration_sec": 25.0
+    },
+    {
+      "session_id": "LPE_P35",
+      "true_onsets": 5,
+      "matched_tp": 4,
+      "false_alerts_fp": 3,
+      "duration_sec": 206.0
+    }
+  ]
+}

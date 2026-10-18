@@ -47,6 +47,10 @@ models/**/*.bin
 models/**/*.npy
 !models/.gitkeep
 
+# Binary array dumps & prediction exports
+results/metrics/*.npy
+*.npy
+
 # IDE and OS files
 .vscode/
 .idea/

@@ -1,0 +1,5 @@
+model,optimal_temperature_T,raw_brier,calibrated_brier,brier_delta_pct
+Population TCN,1.0,0.1761,0.1761,0.0
+Personal TCN,1.0,0.2524,0.2524,0.01
+Full Proposed TCN,1.0,0.0586,0.0586,0.01
+Masked Fallback TCN,1.0,0.0544,0.0544,0.08

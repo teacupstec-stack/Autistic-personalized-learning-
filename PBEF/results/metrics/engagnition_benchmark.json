@@ -1,78 +1,140 @@
 [
   {
-    "model_name": "Prevalence Chance Baseline",
+    "model_name": "Prevalence Chance Baseline (Train Prior)",
     "model_type": "Heuristic Prior",
-    "eval_split": "Held-out Test (6 Participants)",
-    "pr_auc": 0.1877,
+    "eval_split": "Held-out Test (7 Participants)",
+    "prevalence": 0.0773,
+    "pr_auc": 0.0773,
     "roc_auc": 0.5,
     "f1_score": 0.0,
     "precision": 0.0,
     "recall": 0.0,
-    "brier_score": 0.4405
+    "brier_score": 0.0755,
+    "threshold": 0.5,
+    "confusion_matrix": [
+      [
+        1456,
+        0
+      ],
+      [
+        122,
+        0
+      ]
+    ]
   },
   {
     "model_name": "Logistic Regression (30s Summaries)",
     "model_type": "Linear Baseline",
-    "eval_split": "Held-out Test (6 Participants)",
-    "prevalence": 0.6488,
-    "pr_auc": 0.884,
-    "roc_auc": 0.7662,
-    "f1_score": 0.7601,
-    "precision": 0.6758,
-    "recall": 0.8683,
-    "brier_score": 0.2204,
-    "threshold": 0.1
+    "eval_split": "Held-out Test (7 Participants)",
+    "prevalence": 0.0773,
+    "pr_auc": 0.2027,
+    "roc_auc": 0.3821,
+    "f1_score": 0.1581,
+    "precision": 0.1527,
+    "recall": 0.1639,
+    "brier_score": 0.0703,
+    "threshold": 0.05,
+    "confusion_matrix": [
+      [
+        1345,
+        111
+      ],
+      [
+        102,
+        20
+      ]
+    ]
   },
   {
-    "model_name": "TCN Population Baseline (No Personal Calib)",
-    "model_type": "Temporal ConvNet",
-    "eval_split": "Held-out Test (6 Participants)",
-    "prevalence": 0.6488,
-    "pr_auc": 0.7994,
-    "roc_auc": 0.6404,
-    "f1_score": 0.6534,
-    "precision": 0.7303,
-    "recall": 0.5911,
-    "brier_score": 0.3906,
-    "threshold": 0.1
+    "model_name": "TCN Population Baseline (Global Standardization)",
+    "model_type": "Temporal ConvNet (Population)",
+    "eval_split": "Held-out Test (7 Participants)",
+    "prevalence": 0.0773,
+    "pr_auc": 0.0663,
+    "roc_auc": 0.4565,
+    "f1_score": 0.0,
+    "precision": 0.0,
+    "recall": 0.0,
+    "brier_score": 0.1761,
+    "threshold": 0.8,
+    "confusion_matrix": [
+      [
+        1313,
+        143
+      ],
+      [
+        122,
+        0
+      ]
+    ]
   },
   {
     "model_name": "TCN Personal Baseline (Interaction + Motion Calibrated)",
     "model_type": "Temporal ConvNet (Personalized)",
-    "eval_split": "Held-out Test (6 Participants)",
-    "prevalence": 0.6488,
-    "pr_auc": 0.8916,
-    "roc_auc": 0.7841,
-    "f1_score": 0.7823,
-    "precision": 0.6483,
-    "recall": 0.9861,
-    "brier_score": 0.1914,
-    "threshold": 0.1
+    "eval_split": "Held-out Test (7 Participants)",
+    "prevalence": 0.0773,
+    "pr_auc": 0.4709,
+    "roc_auc": 0.9202,
+    "f1_score": 0.1435,
+    "precision": 0.0773,
+    "recall": 1.0,
+    "brier_score": 0.2524,
+    "threshold": 0.05,
+    "confusion_matrix": [
+      [
+        0,
+        1456
+      ],
+      [
+        0,
+        122
+      ]
+    ]
   },
   {
     "model_name": "TCN Full Proposed (Personalized + Multimodal Gate)",
     "model_type": "Temporal ConvNet (Multimodal Gate)",
-    "eval_split": "Held-out Test (6 Participants)",
-    "prevalence": 0.6488,
-    "pr_auc": 0.9151,
-    "roc_auc": 0.8479,
-    "f1_score": 0.7844,
-    "precision": 0.6491,
-    "recall": 0.991,
-    "brier_score": 0.1548,
-    "threshold": 0.1
+    "eval_split": "Held-out Test (7 Participants)",
+    "prevalence": 0.0773,
+    "pr_auc": 0.4233,
+    "roc_auc": 0.9176,
+    "f1_score": 0.3935,
+    "precision": 0.245,
+    "recall": 1.0,
+    "brier_score": 0.0586,
+    "threshold": 0.08,
+    "confusion_matrix": [
+      [
+        1080,
+        376
+      ],
+      [
+        0,
+        122
+      ]
+    ]
   },
   {
     "model_name": "TCN Ablation: Camera Masked Fallback",
     "model_type": "Reliability Gate Fallback",
-    "eval_split": "Held-out Test (6 Participants)",
-    "prevalence": 0.6488,
-    "pr_auc": 0.5928,
-    "roc_auc": 0.1684,
-    "f1_score": 0.0485,
-    "precision": 0.2378,
-    "recall": 0.027,
-    "brier_score": 0.6447,
-    "threshold": 0.1
+    "eval_split": "Held-out Test (7 Participants)",
+    "prevalence": 0.0773,
+    "pr_auc": 0.4273,
+    "roc_auc": 0.9193,
+    "f1_score": 0.2936,
+    "precision": 0.1721,
+    "recall": 1.0,
+    "brier_score": 0.0544,
+    "threshold": 0.05,
+    "confusion_matrix": [
+      [
+        869,
+        587
+      ],
+      [
+        0,
+        122
+      ]
+    ]
   }
 ]

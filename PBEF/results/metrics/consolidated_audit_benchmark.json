@@ -1,0 +1,72 @@
+[
+  {
+    "Model Name": "Prevalence Chance Baseline (Train Prior)",
+    "Architecture": "Heuristic Train Prior",
+    "Features": "None",
+    "PR-AUC": 0.0773,
+    "ROC-AUC": 0.5,
+    "Raw Brier": 0.0755,
+    "Calibrated Brier": 0.0755,
+    "Scientific Status": "Baseline Reference"
+  },
+  {
+    "Model Name": "Population Logistic Regression",
+    "Architecture": "Linear (Balanced)",
+    "Features": "Globally Standardized Raw Summaries",
+    "PR-AUC": 0.1725,
+    "ROC-AUC": 0.5643,
+    "Raw Brier": 0.0714,
+    "Calibrated Brier": 0.0714,
+    "Scientific Status": "Valid Population Baseline"
+  },
+  {
+    "Model Name": "Personalized Logistic Regression",
+    "Architecture": "Linear (Balanced)",
+    "Features": "Personal-Normalized Summaries (X)",
+    "PR-AUC": 0.2027,
+    "ROC-AUC": 0.3821,
+    "Raw Brier": 0.0703,
+    "Calibrated Brier": 0.0703,
+    "Scientific Status": "Anti-predictive (Participant Shift)"
+  },
+  {
+    "Model Name": "TCN Population Baseline",
+    "Architecture": "2-Layer Dilated TCN",
+    "Features": "Global Standardization (X_pop_norm)",
+    "PR-AUC": 0.0663,
+    "ROC-AUC": 0.4565,
+    "Raw Brier": 0.1761,
+    "Calibrated Brier": 0.1761,
+    "Scientific Status": "Underperforming (Overfits Single Train Pos PID)"
+  },
+  {
+    "Model Name": "TCN Personal Baseline",
+    "Architecture": "2-Layer Dilated TCN",
+    "Features": "Personal Calibration (No Gate)",
+    "PR-AUC": 0.4709,
+    "ROC-AUC": 0.9202,
+    "Raw Brier": 0.2524,
+    "Calibrated Brier": 0.2524,
+    "Scientific Status": "Strong Ranking, Poor Probabilities"
+  },
+  {
+    "Model Name": "TCN Full Proposed",
+    "Architecture": "TCN + Multimodal Gate + Dropout",
+    "Features": "Personalized Interaction + Gaze",
+    "PR-AUC": 0.4233,
+    "ROC-AUC": 0.9176,
+    "Raw Brier": 0.0586,
+    "Calibrated Brier": 0.0586,
+    "Scientific Status": "Strong Ranking, Calibrated by Gate"
+  },
+  {
+    "Model Name": "TCN Camera-Masked Fallback",
+    "Architecture": "Full TCN (Gaze Zeroed)",
+    "Features": "Interaction Modality Only",
+    "PR-AUC": 0.4273,
+    "ROC-AUC": 0.9193,
+    "Raw Brier": 0.0544,
+    "Calibrated Brier": 0.0544,
+    "Scientific Status": "Graceful Resilience (Gaze Adds No Signal)"
+  }
+]

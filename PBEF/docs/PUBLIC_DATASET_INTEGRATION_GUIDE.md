@@ -88,33 +88,72 @@ Trains and evaluates all 6 baseline and proposed models on an untouched, held-ou
 
 ## 4. Empirical Benchmark Results on Real Engagnition Cohort
 
-Evaluated strictly on **6 completely held-out clinical participants** (`P40`, `P41`, `P39`, `P28`, `P35`, `P20`; 2,224 test windows, 64.88% test prevalence):
+Evaluated strictly on **7 completely held-out clinical test participants** (`P40`, `P35`, `P28`, `P39`, `P42`, `P20`, `P26`; 1,578 test windows, 7.73% test prevalence):
 
-| Model Configuration | Model Type | PR-AUC | ROC-AUC | F1-Score | Precision | Recall | Brier Score |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Prevalence Chance Baseline** | Heuristic Prior | `0.1877` | `0.5000` | `0.0000` | `0.0000` | `0.0000` | `0.4405` |
-| **TCN Population Baseline** | Temporal ConvNet (Unnormalized) | `0.7994` | `0.6404` | `0.6534` | `0.7303` | `0.5911` | `0.3906` |
-| **TCN Personal Baseline** | Temporal ConvNet (60s Calibrated) | `0.8916` | `0.7841` | `0.7823` | `0.6483` | `0.9861` | `0.1914` |
-| **Logistic Regression (30s Summaries)** | Linear Baseline | `0.8840` | `0.7662` | `0.7601` | `0.6758` | `0.8683` | `0.2204` |
-| **TCN Full Proposed (Gate)** | Multimodal Reliability Gate | **`0.9151`** | **`0.8479`** | **`0.7844`** | `0.6491` | **`0.9910`** | **`0.1548`** |
-| **TCN Missing-Camera Fallback** | Camera Masked Ablation | `0.5928` | `0.1684` | `0.0485` | `0.2378` | `0.0270` | `0.6447` |
-
-### Key Research Findings
-1. **Clear Superiority of Proposed Model:** The Full Proposed Forecaster outperforms both linear and population baselines across every ranking and calibration metric, reaching **PR-AUC = 0.9151**, **ROC-AUC = 0.8479**, **Recall = 99.10%**, and the lowest probabilistic error (**Brier Score = 0.1548**).
-2. **Empirical Value of Personal Baseline Normalization:**
-   - Population TCN (No personal calibration): PR-AUC `0.7994`, ROC-AUC `0.6404`, F1 `0.6534`.
-   - Personal Baseline TCN (60s early calibration): PR-AUC `0.8916`, ROC-AUC `0.7841`, F1 `0.7823`.
-   - Normalizing interaction and physical movement against an initial 60-second baseline yields an **+11.5% absolute gain (+14.3% relative gain) in PR-AUC** and a **+22.4% relative gain in ROC-AUC** on real autistic children!
-3. **Multimodal Contribution:** Comparing the full multimodal model (PR-AUC 0.9151) against the camera-masked ablation demonstrates that real eye-gaze tracking provides significant predictive information when combined with interaction telemetry.
+### Consolidated Model Comparison Table (Audited)
+| Model Configuration | Model Type | PR-AUC | ROC-AUC | Raw Brier | Calibrated Brier | Scientific Status |
+| :--- | :--- | :---: | :---: | :---: | :---: | :--- |
+| **Prevalence Chance Baseline (Train Prior)** | Heuristic Prior | `0.0773` | `0.5000` | `0.0755` | `0.0755` | **Theoretical reference** (evaluates constant prior `0.0127`) |
+| **Population Logistic Regression** | Linear (`balanced`) | `0.1725` | `0.5643` | `0.0714` | `0.0714` | **Valid population baseline** (global raw feature summaries) |
+| **Personalized Logistic Regression** | Linear (`balanced`) | `0.2027` | `0.3821` | `0.0703` | `0.0703` | **Anti-predictive** (overfits P41 personal shift) |
+| **TCN Population Baseline** | 2-Layer Dilated TCN | `0.0663` | `0.4565` | `0.1761` | `0.1761` | **Underperforming** (overfits single train positive participant) |
+| **TCN Personal Baseline** | 2-Layer Dilated TCN | `0.4709` | `0.9202` | `0.2524` | `0.2524` | **Strong ranking, poor probabilities** (predicts 0.45–0.74) |
+| **TCN Full Proposed (Gate + Dropout)** | Multimodal Gate | **`0.4233`** | **`0.9176`** | **`0.0586`** | **`0.0586`** | **Strong ranking, regularized probabilities** (Brier < baseline) |
+| **TCN Ablation: Camera-Masked Fallback** | Reliability Fallback | `0.4273` | `0.9193` | `0.0544` | `0.0544` | **Graceful resilience** (interaction channels sufficient) |
 
 ---
 
-## 5. What to Claim in Your Viva & Thesis
+## 5. Audit Diagnostics & Scientific Findings
 
-- **What you CAN claim:**
-  - *"We evaluated our proposed Personal-Baseline Forecaster on the real Engagnition public clinical dataset ($N=57$ autistic children, 38 multimodal experimental cohorts, 9,314 non-leaking windows across 3.43 hours of continuous session recordings)."*
-  - *"Across 6 completely held-out clinical test participants (2,224 test windows), personal baseline normalization improved ROC-AUC from 0.6404 to 0.7841, and our full multimodal reliability-gated forecaster achieved a peak PR-AUC of 0.9151 and 99.1% event recall."*
-  - *"Our pipeline enforces strict participant isolation and zero intra-session calibration leakage ($t \ge 60\text{s}$)."*
-- **What you must NOT claim:**
-  - Do **not** claim that Engagnition exergame results directly prove that your tablet numeracy app works in an autistic classroom.
-  - Do **not** claim the model diagnoses autism or detects internal emotional states.
+### A. Critical Finding: Participant Onset Concentration
+A formal audit of all 37 Engagnition participants reveals extreme outcome concentration:
+- **Zero-onset participants:** **29 of 37 participants (78.4%)** contain **0** onset windows (they remained engaged throughout).
+- **Onset-bearing participants:** Only **8 of 37 participants (21.6%)** ever experienced a participation decrease onset.
+- **Top 3 concentration:** `P53` (80 onsets), `P35` (54 onsets), and `P40` (48 onsets) account for **182 of 272 (66.9%)** of all onset windows across the entire dataset.
+- **Split Distribution Reality:**
+  - **Train split (23 PIDs, 3,869 windows):** 49 positive windows, of which **48 come from a single participant (`P41`)** and 1 from `P30`.
+  - **Validation split (7 PIDs, 1,258 windows):** 101 positive windows (`P53`: 80, `P27`: 20, `P29`: 1).
+  - **Test split (7 PIDs, 1,578 windows):** 122 positive windows (`P40`: 48, `P35`: 54, `P28`: 20). Notably, **60.7% of all test positives come from just two participants (`P35` and `P28`) across only 99 combined windows.**
+
+### B. Explanation of Benchmark Anomalies
+1. **Why Population TCN (ROC-AUC 0.4565) and Personalized LR (ROC-AUC 0.3821) underperform:**  
+   Because 98% of training positives come from `P41`, unconstrained neural and linear models learn decision boundaries tailored exclusively to `P41`'s physiological signature. When transferred to `P40`, `P35`, and `P28`, raw global features fail to transfer without personal calibration, and linear personalized weights invert relative rankings.
+2. **Why Population Logistic Regression achieves ROC-AUC 0.5643 and PR-AUC 0.1725:**  
+   Global summary statistics of raw interaction and movement features provide genuine population discrimination (+123% over prevalence chance), proving population transfer is possible with simple linear boundaries, but highly sensitive in complex models.
+3. **The Personal TCN Brier Score (0.2524) Diagnosed:**  
+   Inspection of predicted probabilities reveals that 100% of test predictions from the Personal TCN fall into the narrow range `[0.4558, 0.7371]` (mean: `0.5207`). Because actual test prevalence is 7.73%, predicting ~0.52 for negative windows (92.27% of the test set) causes severe quadratic penalty: $(0.52 - 0)^2 \approx 0.27$, yielding Brier = 0.2524. The **Full Proposed TCN** resolves this: its multimodal reliability gate and modality dropout act as regularizers, bringing average test probabilities to `0.1031` and Brier score to **`0.0586`** (well below the constant baseline `0.0755`).
+4. **Permutation Importance Confirms Gaze Is Redundant on Engagnition:**  
+   Randomly permuting visual gaze channels (8..10) across test windows over 10 repeated runs produced PR-AUC = `0.4098 ± 0.0202` (baseline: `0.4233`, $\Delta = +0.0135$, within 1 standard deviation). Camera-masked fallback achieves PR-AUC = `0.4273`. Visual gaze provides no measurable marginal value in this exergame; the interaction and movement channels carry the entire predictive signal.
+5. **Leave-One-Participant-Out (LOPO) Cross-Validation Across the Onset Cohort:**  
+   Evaluating LOPO across all 6 valid onset-bearing participants (`P53`, `P35`, `P40`, `P41`, `P27`, `P28`):
+   - **Population Logistic Regression:** PR-AUC = **`0.5284 ± 0.2755`** | ROC-AUC = **`0.5842 ± 0.2911`**
+   - **Personalized TCN:** PR-AUC = **`0.4915 ± 0.2789`** | ROC-AUC = **`0.4256 ± 0.2061`**  
+   LOPO confirms that cross-participant generalization on this dataset is constrained by small sample size and idiosyncratic individual baselines.
+
+---
+
+## 6. Event-Level Advance Warnings & Operating Points
+
+- **Total Ground-Truth Decrease Episodes:** 11 discrete episodes
+- **Matched Alerts (True Positives):** **9 (81.82% point estimate)**
+- **95% Bootstrap Confidence Interval ($B=10,000$):** **`[54.5%, 100.0%]`** (Median `81.8%`)
+- **Usable Lead Time Distribution:** Mean = **`8.67 seconds`** | Median = **`9.00 seconds`**
+- **Operating Point Trade-off:**
+  - *F1-Optimal Threshold ($t = 0.08$):* 9/11 episodes detected (81.8% recall), 32 false alerts (61.47 alerts/hour), precision = 21.95%.
+  - *Clinical False-Alert Budget ($t = 0.30$):* 5/11 episodes detected (45.5% recall), 12 false alerts (23.05 alerts/hour), precision = 29.41%.
+
+---
+
+## 7. Defensible Claims for PP1 Report & Viva
+
+### ✅ Defensible Claims to Make:
+1. **Zero-Leakage Rigorous Pipeline:** Temporal windows strictly isolate personal baseline calibration to the initial 60s, beginning observation history strictly at $t \ge 90\text{s}$ (zero calibration leakage), with causal forward-filling and strict rising-edge onset definitions.
+2. **Personal Calibration Value:** On held-out participants, personal baseline normalization substantially improves sequence ranking (ROC-AUC `0.9176`, PR-AUC `0.4233`) compared to the constant prior (`0.0773`) and population logistic regression (`0.1725`).
+3. **Graceful Fallback Resilience:** The reliability gate and modality dropout allow the model to operate without degradation when the camera is masked (PR-AUC `0.4273`, Brier `0.0544`).
+4. **Advance Warning Feasibility:** The system demonstrates advance warnings with a median lead time of 9.0 seconds, detecting 9 of 11 discrete clinical episodes (95% bootstrap CI: [54.5%, 100.0%]).
+
+### ❌ Inaccurate Claims to Avoid:
+1. **Do NOT claim "+610% gain over population":** The population TCN was anti-predictive (ROC-AUC 0.4565) due to single-participant training concentration. The fair comparison is against Population Logistic Regression (PR-AUC 0.1725), yielding an honest **+145% to +173% relative gain**.
+2. **Do NOT claim multimodal gaze superiority:** Permutation importance proves visual gaze features add no measurable predictive benefit over interaction dynamics in this dataset. State honestly: *"The camera fallback enables graceful resilience, but multimodal benefit is not demonstrated on Engagnition."*
+3. **Do NOT claim clinical readiness:** 61.47 false alerts/hour at the high-recall threshold requires operating point calibration under a specific false-alert budget (scheduled for PP2).
+4. **Do NOT conflate Engagnition with the tablet numeracy app:** Engagnition benchmarks temporal sequence modeling on autistic children during an exergame; the tablet PWA pilot has its own distinct touch interaction dynamics.
