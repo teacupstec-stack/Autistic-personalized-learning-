@@ -1,0 +1,18 @@
+$ npm test
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> c2-research@0.1.0 test
+> tsc && node tests/check_ts.cjs
+
+TypeScript: 45 fixtures + 6 event pairs passed (simulated).
+exit_code=0
+
+$ /workspace/scratch/a333d22f56a3/.venv/bin/python -m unittest discover -s tests -v
+test_shared_fixtures_and_typescript_agreement (test_contracts.ContractTests.test_shared_fixtures_and_typescript_agreement) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.220s
+
+OK
+GATE PASS: Python and TypeScript agree on 45 fixtures and 6 event pairs (simulated).
+exit_code=0

@@ -1,0 +1,2072 @@
+[
+  {
+    "name": "fresh C3",
+    "kind": "snapshot",
+    "value": {
+      "snapshot_id": "snap_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "skill_estimate": 0.5,
+      "recent_results": [
+        {
+          "decision_id": "d_0",
+          "outcome_time": "2026-10-15T18:44:00.000Z",
+          "success": true,
+          "independent": false
+        }
+      ],
+      "hint_history": [
+        {
+          "time": "2026-10-15T18:44:00.000Z",
+          "count": 1
+        }
+      ],
+      "confirmed_requests": [],
+      "c3_risk": {
+        "value": 0.6,
+        "confidence": 0.8,
+        "observed_at": "2026-10-15T18:44:00.000Z",
+        "expires_at": "2026-10-15T18:46:00.000Z"
+      },
+      "teacher_limits": {
+        "approved_actions": [
+          "a1",
+          "a2"
+        ],
+        "allowed_actions": [
+          "a1"
+        ],
+        "max_failure_sequence": 3
+      }
+    },
+    "expected": {
+      "valid": true,
+      "c3_status": "known"
+    }
+  },
+  {
+    "name": "missing C3",
+    "kind": "snapshot",
+    "value": {
+      "snapshot_id": "snap_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "skill_estimate": 0.5,
+      "recent_results": [
+        {
+          "decision_id": "d_0",
+          "outcome_time": "2026-10-15T18:44:00.000Z",
+          "success": true,
+          "independent": false
+        }
+      ],
+      "hint_history": [
+        {
+          "time": "2026-10-15T18:44:00.000Z",
+          "count": 1
+        }
+      ],
+      "confirmed_requests": [],
+      "teacher_limits": {
+        "approved_actions": [
+          "a1",
+          "a2"
+        ],
+        "allowed_actions": [
+          "a1"
+        ],
+        "max_failure_sequence": 3
+      }
+    },
+    "expected": {
+      "valid": true,
+      "c3_status": "unknown"
+    }
+  },
+  {
+    "name": "null C3",
+    "kind": "snapshot",
+    "value": {
+      "snapshot_id": "snap_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "skill_estimate": 0.5,
+      "recent_results": [
+        {
+          "decision_id": "d_0",
+          "outcome_time": "2026-10-15T18:44:00.000Z",
+          "success": true,
+          "independent": false
+        }
+      ],
+      "hint_history": [
+        {
+          "time": "2026-10-15T18:44:00.000Z",
+          "count": 1
+        }
+      ],
+      "confirmed_requests": [],
+      "c3_risk": null,
+      "teacher_limits": {
+        "approved_actions": [
+          "a1",
+          "a2"
+        ],
+        "allowed_actions": [
+          "a1"
+        ],
+        "max_failure_sequence": 3
+      }
+    },
+    "expected": {
+      "valid": true,
+      "c3_status": "unknown"
+    }
+  },
+  {
+    "name": "expired C3",
+    "kind": "snapshot",
+    "value": {
+      "snapshot_id": "snap_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "skill_estimate": 0.5,
+      "recent_results": [
+        {
+          "decision_id": "d_0",
+          "outcome_time": "2026-10-15T18:44:00.000Z",
+          "success": true,
+          "independent": false
+        }
+      ],
+      "hint_history": [
+        {
+          "time": "2026-10-15T18:44:00.000Z",
+          "count": 1
+        }
+      ],
+      "confirmed_requests": [],
+      "c3_risk": {
+        "value": 0.6,
+        "confidence": 0.8,
+        "observed_at": "2026-10-15T18:44:00.000Z",
+        "expires_at": "2026-10-15T18:44:30.000Z"
+      },
+      "teacher_limits": {
+        "approved_actions": [
+          "a1",
+          "a2"
+        ],
+        "allowed_actions": [
+          "a1"
+        ],
+        "max_failure_sequence": 3
+      }
+    },
+    "expected": {
+      "valid": true,
+      "c3_status": "unknown"
+    }
+  },
+  {
+    "name": "expiry boundary",
+    "kind": "snapshot",
+    "value": {
+      "snapshot_id": "snap_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "skill_estimate": 0.5,
+      "recent_results": [
+        {
+          "decision_id": "d_0",
+          "outcome_time": "2026-10-15T18:44:00.000Z",
+          "success": true,
+          "independent": false
+        }
+      ],
+      "hint_history": [
+        {
+          "time": "2026-10-15T18:44:00.000Z",
+          "count": 1
+        }
+      ],
+      "confirmed_requests": [],
+      "c3_risk": {
+        "value": 0.6,
+        "confidence": 0.8,
+        "observed_at": "2026-10-15T18:44:00.000Z",
+        "expires_at": "2026-10-15T18:45:00.000Z"
+      },
+      "teacher_limits": {
+        "approved_actions": [
+          "a1",
+          "a2"
+        ],
+        "allowed_actions": [
+          "a1"
+        ],
+        "max_failure_sequence": 3
+      }
+    },
+    "expected": {
+      "valid": true,
+      "c3_status": "unknown"
+    }
+  },
+  {
+    "name": "zero risk is known",
+    "kind": "snapshot",
+    "value": {
+      "snapshot_id": "snap_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "skill_estimate": 0.5,
+      "recent_results": [
+        {
+          "decision_id": "d_0",
+          "outcome_time": "2026-10-15T18:44:00.000Z",
+          "success": true,
+          "independent": false
+        }
+      ],
+      "hint_history": [
+        {
+          "time": "2026-10-15T18:44:00.000Z",
+          "count": 1
+        }
+      ],
+      "confirmed_requests": [],
+      "c3_risk": {
+        "value": 0,
+        "confidence": 0.8,
+        "observed_at": "2026-10-15T18:44:00.000Z",
+        "expires_at": "2026-10-15T18:46:00.000Z"
+      },
+      "teacher_limits": {
+        "approved_actions": [
+          "a1",
+          "a2"
+        ],
+        "allowed_actions": [
+          "a1"
+        ],
+        "max_failure_sequence": 3
+      }
+    },
+    "expected": {
+      "valid": true,
+      "c3_status": "known"
+    }
+  },
+  {
+    "name": "zero confidence preserved",
+    "kind": "snapshot",
+    "value": {
+      "snapshot_id": "snap_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "skill_estimate": 0.5,
+      "recent_results": [
+        {
+          "decision_id": "d_0",
+          "outcome_time": "2026-10-15T18:44:00.000Z",
+          "success": true,
+          "independent": false
+        }
+      ],
+      "hint_history": [
+        {
+          "time": "2026-10-15T18:44:00.000Z",
+          "count": 1
+        }
+      ],
+      "confirmed_requests": [],
+      "c3_risk": {
+        "value": 0.6,
+        "confidence": 0,
+        "observed_at": "2026-10-15T18:44:00.000Z",
+        "expires_at": "2026-10-15T18:46:00.000Z"
+      },
+      "teacher_limits": {
+        "approved_actions": [
+          "a1",
+          "a2"
+        ],
+        "allowed_actions": [
+          "a1"
+        ],
+        "max_failure_sequence": 3
+      }
+    },
+    "expected": {
+      "valid": true,
+      "c3_status": "known"
+    }
+  },
+  {
+    "name": "confidence too high",
+    "kind": "snapshot",
+    "value": {
+      "snapshot_id": "snap_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "skill_estimate": 0.5,
+      "recent_results": [
+        {
+          "decision_id": "d_0",
+          "outcome_time": "2026-10-15T18:44:00.000Z",
+          "success": true,
+          "independent": false
+        }
+      ],
+      "hint_history": [
+        {
+          "time": "2026-10-15T18:44:00.000Z",
+          "count": 1
+        }
+      ],
+      "confirmed_requests": [],
+      "c3_risk": {
+        "value": 0.6,
+        "confidence": 1.1,
+        "observed_at": "2026-10-15T18:44:00.000Z",
+        "expires_at": "2026-10-15T18:46:00.000Z"
+      },
+      "teacher_limits": {
+        "approved_actions": [
+          "a1",
+          "a2"
+        ],
+        "allowed_actions": [
+          "a1"
+        ],
+        "max_failure_sequence": 3
+      }
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "missing confidence",
+    "kind": "snapshot",
+    "value": {
+      "snapshot_id": "snap_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "skill_estimate": 0.5,
+      "recent_results": [
+        {
+          "decision_id": "d_0",
+          "outcome_time": "2026-10-15T18:44:00.000Z",
+          "success": true,
+          "independent": false
+        }
+      ],
+      "hint_history": [
+        {
+          "time": "2026-10-15T18:44:00.000Z",
+          "count": 1
+        }
+      ],
+      "confirmed_requests": [],
+      "c3_risk": {
+        "value": 0.6,
+        "observed_at": "2026-10-15T18:44:00.000Z",
+        "expires_at": "2026-10-15T18:46:00.000Z"
+      },
+      "teacher_limits": {
+        "approved_actions": [
+          "a1",
+          "a2"
+        ],
+        "allowed_actions": [
+          "a1"
+        ],
+        "max_failure_sequence": 3
+      }
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "bad expiry interval",
+    "kind": "snapshot",
+    "value": {
+      "snapshot_id": "snap_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "skill_estimate": 0.5,
+      "recent_results": [
+        {
+          "decision_id": "d_0",
+          "outcome_time": "2026-10-15T18:44:00.000Z",
+          "success": true,
+          "independent": false
+        }
+      ],
+      "hint_history": [
+        {
+          "time": "2026-10-15T18:44:00.000Z",
+          "count": 1
+        }
+      ],
+      "confirmed_requests": [],
+      "c3_risk": {
+        "value": 0.6,
+        "confidence": 0.8,
+        "observed_at": "2026-10-15T18:44:00.000Z",
+        "expires_at": "2026-10-15T18:44:00.000Z"
+      },
+      "teacher_limits": {
+        "approved_actions": [
+          "a1",
+          "a2"
+        ],
+        "allowed_actions": [
+          "a1"
+        ],
+        "max_failure_sequence": 3
+      }
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "future observation",
+    "kind": "snapshot",
+    "value": {
+      "snapshot_id": "snap_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "skill_estimate": 0.5,
+      "recent_results": [
+        {
+          "decision_id": "d_0",
+          "outcome_time": "2026-10-15T18:44:00.000Z",
+          "success": true,
+          "independent": false
+        }
+      ],
+      "hint_history": [
+        {
+          "time": "2026-10-15T18:44:00.000Z",
+          "count": 1
+        }
+      ],
+      "confirmed_requests": [],
+      "c3_risk": {
+        "value": 0.6,
+        "confidence": 0.8,
+        "observed_at": "2026-10-15T18:46:00.000Z",
+        "expires_at": "2026-10-15T18:46:00.000Z"
+      },
+      "teacher_limits": {
+        "approved_actions": [
+          "a1",
+          "a2"
+        ],
+        "allowed_actions": [
+          "a1"
+        ],
+        "max_failure_sequence": 3
+      }
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "impossible calendar date",
+    "kind": "snapshot",
+    "value": {
+      "snapshot_id": "snap_1",
+      "decision_time": "2026-02-30T18:45:00.000Z",
+      "skill_estimate": 0.5,
+      "recent_results": [
+        {
+          "decision_id": "d_0",
+          "outcome_time": "2026-10-15T18:44:00.000Z",
+          "success": true,
+          "independent": false
+        }
+      ],
+      "hint_history": [
+        {
+          "time": "2026-10-15T18:44:00.000Z",
+          "count": 1
+        }
+      ],
+      "confirmed_requests": [],
+      "c3_risk": {
+        "value": 0.6,
+        "confidence": 0.8,
+        "observed_at": "2026-10-15T18:44:00.000Z",
+        "expires_at": "2026-10-15T18:46:00.000Z"
+      },
+      "teacher_limits": {
+        "approved_actions": [
+          "a1",
+          "a2"
+        ],
+        "allowed_actions": [
+          "a1"
+        ],
+        "max_failure_sequence": 3
+      }
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "noncanonical timestamp",
+    "kind": "snapshot",
+    "value": {
+      "snapshot_id": "snap_1",
+      "decision_time": "2026-10-15T18:45:00Z",
+      "skill_estimate": 0.5,
+      "recent_results": [
+        {
+          "decision_id": "d_0",
+          "outcome_time": "2026-10-15T18:44:00.000Z",
+          "success": true,
+          "independent": false
+        }
+      ],
+      "hint_history": [
+        {
+          "time": "2026-10-15T18:44:00.000Z",
+          "count": 1
+        }
+      ],
+      "confirmed_requests": [],
+      "c3_risk": {
+        "value": 0.6,
+        "confidence": 0.8,
+        "observed_at": "2026-10-15T18:44:00.000Z",
+        "expires_at": "2026-10-15T18:46:00.000Z"
+      },
+      "teacher_limits": {
+        "approved_actions": [
+          "a1",
+          "a2"
+        ],
+        "allowed_actions": [
+          "a1"
+        ],
+        "max_failure_sequence": 3
+      }
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "future history",
+    "kind": "snapshot",
+    "value": {
+      "snapshot_id": "snap_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "skill_estimate": 0.5,
+      "recent_results": [
+        {
+          "decision_id": "d_0",
+          "outcome_time": "2026-10-15T18:46:00.000Z",
+          "success": true,
+          "independent": false
+        }
+      ],
+      "hint_history": [
+        {
+          "time": "2026-10-15T18:44:00.000Z",
+          "count": 1
+        }
+      ],
+      "confirmed_requests": [],
+      "c3_risk": {
+        "value": 0.6,
+        "confidence": 0.8,
+        "observed_at": "2026-10-15T18:44:00.000Z",
+        "expires_at": "2026-10-15T18:46:00.000Z"
+      },
+      "teacher_limits": {
+        "approved_actions": [
+          "a1",
+          "a2"
+        ],
+        "allowed_actions": [
+          "a1"
+        ],
+        "max_failure_sequence": 3
+      }
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "same time history",
+    "kind": "snapshot",
+    "value": {
+      "snapshot_id": "snap_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "skill_estimate": 0.5,
+      "recent_results": [
+        {
+          "decision_id": "d_0",
+          "outcome_time": "2026-10-15T18:45:00.000Z",
+          "success": true,
+          "independent": false
+        }
+      ],
+      "hint_history": [
+        {
+          "time": "2026-10-15T18:44:00.000Z",
+          "count": 1
+        }
+      ],
+      "confirmed_requests": [],
+      "c3_risk": {
+        "value": 0.6,
+        "confidence": 0.8,
+        "observed_at": "2026-10-15T18:44:00.000Z",
+        "expires_at": "2026-10-15T18:46:00.000Z"
+      },
+      "teacher_limits": {
+        "approved_actions": [
+          "a1",
+          "a2"
+        ],
+        "allowed_actions": [
+          "a1"
+        ],
+        "max_failure_sequence": 3
+      }
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "future hint",
+    "kind": "snapshot",
+    "value": {
+      "snapshot_id": "snap_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "skill_estimate": 0.5,
+      "recent_results": [
+        {
+          "decision_id": "d_0",
+          "outcome_time": "2026-10-15T18:44:00.000Z",
+          "success": true,
+          "independent": false
+        }
+      ],
+      "hint_history": [
+        {
+          "time": "2026-10-15T18:46:00.000Z",
+          "count": 1
+        }
+      ],
+      "confirmed_requests": [],
+      "c3_risk": {
+        "value": 0.6,
+        "confidence": 0.8,
+        "observed_at": "2026-10-15T18:44:00.000Z",
+        "expires_at": "2026-10-15T18:46:00.000Z"
+      },
+      "teacher_limits": {
+        "approved_actions": [
+          "a1",
+          "a2"
+        ],
+        "allowed_actions": [
+          "a1"
+        ],
+        "max_failure_sequence": 3
+      }
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "negative hint count",
+    "kind": "snapshot",
+    "value": {
+      "snapshot_id": "snap_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "skill_estimate": 0.5,
+      "recent_results": [
+        {
+          "decision_id": "d_0",
+          "outcome_time": "2026-10-15T18:44:00.000Z",
+          "success": true,
+          "independent": false
+        }
+      ],
+      "hint_history": [
+        {
+          "time": "2026-10-15T18:44:00.000Z",
+          "count": -1
+        }
+      ],
+      "confirmed_requests": [],
+      "c3_risk": {
+        "value": 0.6,
+        "confidence": 0.8,
+        "observed_at": "2026-10-15T18:44:00.000Z",
+        "expires_at": "2026-10-15T18:46:00.000Z"
+      },
+      "teacher_limits": {
+        "approved_actions": [
+          "a1",
+          "a2"
+        ],
+        "allowed_actions": [
+          "a1"
+        ],
+        "max_failure_sequence": 3
+      }
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "unapproved teacher action",
+    "kind": "snapshot",
+    "value": {
+      "snapshot_id": "snap_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "skill_estimate": 0.5,
+      "recent_results": [
+        {
+          "decision_id": "d_0",
+          "outcome_time": "2026-10-15T18:44:00.000Z",
+          "success": true,
+          "independent": false
+        }
+      ],
+      "hint_history": [
+        {
+          "time": "2026-10-15T18:44:00.000Z",
+          "count": 1
+        }
+      ],
+      "confirmed_requests": [],
+      "c3_risk": {
+        "value": 0.6,
+        "confidence": 0.8,
+        "observed_at": "2026-10-15T18:44:00.000Z",
+        "expires_at": "2026-10-15T18:46:00.000Z"
+      },
+      "teacher_limits": {
+        "approved_actions": [
+          "a1",
+          "a2"
+        ],
+        "allowed_actions": [
+          "a3"
+        ],
+        "max_failure_sequence": 3
+      }
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "unknown skill",
+    "kind": "snapshot",
+    "value": {
+      "snapshot_id": "snap_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "skill_estimate": null,
+      "recent_results": [
+        {
+          "decision_id": "d_0",
+          "outcome_time": "2026-10-15T18:44:00.000Z",
+          "success": true,
+          "independent": false
+        }
+      ],
+      "hint_history": [
+        {
+          "time": "2026-10-15T18:44:00.000Z",
+          "count": 1
+        }
+      ],
+      "confirmed_requests": [],
+      "c3_risk": {
+        "value": 0.6,
+        "confidence": 0.8,
+        "observed_at": "2026-10-15T18:44:00.000Z",
+        "expires_at": "2026-10-15T18:46:00.000Z"
+      },
+      "teacher_limits": {
+        "approved_actions": [
+          "a1",
+          "a2"
+        ],
+        "allowed_actions": [
+          "a1"
+        ],
+        "max_failure_sequence": 3
+      }
+    },
+    "expected": {
+      "valid": true,
+      "c3_status": "known"
+    }
+  },
+  {
+    "name": "boolean not skill",
+    "kind": "snapshot",
+    "value": {
+      "snapshot_id": "snap_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "skill_estimate": true,
+      "recent_results": [
+        {
+          "decision_id": "d_0",
+          "outcome_time": "2026-10-15T18:44:00.000Z",
+          "success": true,
+          "independent": false
+        }
+      ],
+      "hint_history": [
+        {
+          "time": "2026-10-15T18:44:00.000Z",
+          "count": 1
+        }
+      ],
+      "confirmed_requests": [],
+      "c3_risk": {
+        "value": 0.6,
+        "confidence": 0.8,
+        "observed_at": "2026-10-15T18:44:00.000Z",
+        "expires_at": "2026-10-15T18:46:00.000Z"
+      },
+      "teacher_limits": {
+        "approved_actions": [
+          "a1",
+          "a2"
+        ],
+        "allowed_actions": [
+          "a1"
+        ],
+        "max_failure_sequence": 3
+      }
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "extra outcome in snapshot",
+    "kind": "snapshot",
+    "value": {
+      "snapshot_id": "snap_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "skill_estimate": 0.5,
+      "recent_results": [
+        {
+          "decision_id": "d_0",
+          "outcome_time": "2026-10-15T18:44:00.000Z",
+          "success": true,
+          "independent": false
+        }
+      ],
+      "hint_history": [
+        {
+          "time": "2026-10-15T18:44:00.000Z",
+          "count": 1
+        }
+      ],
+      "confirmed_requests": [],
+      "c3_risk": {
+        "value": 0.6,
+        "confidence": 0.8,
+        "observed_at": "2026-10-15T18:44:00.000Z",
+        "expires_at": "2026-10-15T18:46:00.000Z"
+      },
+      "teacher_limits": {
+        "approved_actions": [
+          "a1",
+          "a2"
+        ],
+        "allowed_actions": [
+          "a1"
+        ],
+        "max_failure_sequence": 3
+      },
+      "outcome": true
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "break snapshot is accepted",
+    "kind": "snapshot",
+    "value": {
+      "snapshot_id": "snap_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "skill_estimate": 0.5,
+      "recent_results": [
+        {
+          "decision_id": "d_0",
+          "outcome_time": "2026-10-15T18:44:00.000Z",
+          "success": true,
+          "independent": false
+        }
+      ],
+      "hint_history": [
+        {
+          "time": "2026-10-15T18:44:00.000Z",
+          "count": 1
+        }
+      ],
+      "confirmed_requests": [
+        {
+          "kind": "break",
+          "confirmed_at": "2026-10-15T18:44:00.000Z"
+        }
+      ],
+      "c3_risk": {
+        "value": 0.6,
+        "confidence": 0.8,
+        "observed_at": "2026-10-15T18:44:00.000Z",
+        "expires_at": "2026-10-15T18:46:00.000Z"
+      },
+      "teacher_limits": {
+        "approved_actions": [
+          "a1",
+          "a2"
+        ],
+        "allowed_actions": [
+          "a1"
+        ],
+        "max_failure_sequence": 3
+      }
+    },
+    "expected": {
+      "valid": true,
+      "c3_status": "known"
+    }
+  },
+  {
+    "name": "valid decision",
+    "kind": "decision",
+    "value": {
+      "action_id": "a1",
+      "eligible_actions": [
+        "a1"
+      ],
+      "confidence": null,
+      "reason": "simulated contract fixture",
+      "model_version": "fixture-v1"
+    },
+    "expected": {
+      "valid": true,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "ineligible action",
+    "kind": "decision",
+    "value": {
+      "action_id": "a2",
+      "eligible_actions": [
+        "a1"
+      ],
+      "confidence": null,
+      "reason": "simulated contract fixture",
+      "model_version": "fixture-v1"
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "duplicate eligible",
+    "kind": "decision",
+    "value": {
+      "action_id": "a1",
+      "eligible_actions": [
+        "a1",
+        "a1"
+      ],
+      "confidence": null,
+      "reason": "simulated contract fixture",
+      "model_version": "fixture-v1"
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "too many variants",
+    "kind": "decision",
+    "value": {
+      "action_id": "a1",
+      "eligible_actions": [
+        "a1",
+        "a2",
+        "a3",
+        "a4",
+        "a5"
+      ],
+      "confidence": null,
+      "reason": "simulated contract fixture",
+      "model_version": "fixture-v1"
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "empty list with action",
+    "kind": "decision",
+    "value": {
+      "action_id": "a1",
+      "eligible_actions": [],
+      "confidence": null,
+      "reason": "simulated contract fixture",
+      "model_version": "fixture-v1"
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "null action with options",
+    "kind": "decision",
+    "value": {
+      "action_id": null,
+      "eligible_actions": [
+        "a1"
+      ],
+      "confidence": null,
+      "reason": "simulated contract fixture",
+      "model_version": "fixture-v1"
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "no eligible action",
+    "kind": "decision",
+    "value": {
+      "action_id": null,
+      "eligible_actions": [],
+      "confidence": null,
+      "reason": "simulated contract fixture",
+      "model_version": "fixture-v1"
+    },
+    "expected": {
+      "valid": true,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "valid decision event",
+    "kind": "log_event",
+    "value": {
+      "event_id": "event_1",
+      "decision_id": "d_1",
+      "learner_id": "sim_learner_1",
+      "session_id": "sim_session_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "source": "simulated",
+      "simulator_profile": {
+        "family": "contract_fixture",
+        "profile_id": "profile_1",
+        "generator_version": "fixture-v1",
+        "seed": 42
+      },
+      "event_type": "decision",
+      "context_before_action": {
+        "snapshot_id": "snap_1",
+        "decision_time": "2026-10-15T18:45:00.000Z",
+        "skill_estimate": 0.5,
+        "recent_results": [
+          {
+            "decision_id": "d_0",
+            "outcome_time": "2026-10-15T18:44:00.000Z",
+            "success": true,
+            "independent": false
+          }
+        ],
+        "hint_history": [
+          {
+            "time": "2026-10-15T18:44:00.000Z",
+            "count": 1
+          }
+        ],
+        "confirmed_requests": [],
+        "c3_risk": {
+          "value": 0.6,
+          "confidence": 0.8,
+          "observed_at": "2026-10-15T18:44:00.000Z",
+          "expires_at": "2026-10-15T18:46:00.000Z"
+        },
+        "teacher_limits": {
+          "approved_actions": [
+            "a1",
+            "a2"
+          ],
+          "allowed_actions": [
+            "a1"
+          ],
+          "max_failure_sequence": 3
+        }
+      },
+      "eligible_actions": [
+        "a1"
+      ],
+      "selected_action": "a1",
+      "action_propensity": 1.0,
+      "decision": {
+        "action_id": "a1",
+        "eligible_actions": [
+          "a1"
+        ],
+        "confidence": null,
+        "reason": "simulated contract fixture",
+        "model_version": "fixture-v1"
+      }
+    },
+    "expected": {
+      "valid": true,
+      "c3_status": "known"
+    }
+  },
+  {
+    "name": "valid outcome event",
+    "kind": "log_event",
+    "value": {
+      "event_id": "event_2",
+      "decision_id": "d_1",
+      "learner_id": "sim_learner_1",
+      "session_id": "sim_session_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "source": "simulated",
+      "simulator_profile": {
+        "family": "contract_fixture",
+        "profile_id": "profile_1",
+        "generator_version": "fixture-v1",
+        "seed": 42
+      },
+      "event_type": "outcome",
+      "outcome_time": "2026-10-15T18:46:00.000Z",
+      "selected_action": "a1",
+      "outcome": true,
+      "independence": false,
+      "override": false,
+      "distress_annotation": null
+    },
+    "expected": {
+      "valid": true,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "real source forbidden",
+    "kind": "log_event",
+    "value": {
+      "event_id": "event_1",
+      "decision_id": "d_1",
+      "learner_id": "sim_learner_1",
+      "session_id": "sim_session_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "source": "real",
+      "simulator_profile": {
+        "family": "contract_fixture",
+        "profile_id": "profile_1",
+        "generator_version": "fixture-v1",
+        "seed": 42
+      },
+      "event_type": "decision",
+      "context_before_action": {
+        "snapshot_id": "snap_1",
+        "decision_time": "2026-10-15T18:45:00.000Z",
+        "skill_estimate": 0.5,
+        "recent_results": [
+          {
+            "decision_id": "d_0",
+            "outcome_time": "2026-10-15T18:44:00.000Z",
+            "success": true,
+            "independent": false
+          }
+        ],
+        "hint_history": [
+          {
+            "time": "2026-10-15T18:44:00.000Z",
+            "count": 1
+          }
+        ],
+        "confirmed_requests": [],
+        "c3_risk": {
+          "value": 0.6,
+          "confidence": 0.8,
+          "observed_at": "2026-10-15T18:44:00.000Z",
+          "expires_at": "2026-10-15T18:46:00.000Z"
+        },
+        "teacher_limits": {
+          "approved_actions": [
+            "a1",
+            "a2"
+          ],
+          "allowed_actions": [
+            "a1"
+          ],
+          "max_failure_sequence": 3
+        }
+      },
+      "eligible_actions": [
+        "a1"
+      ],
+      "selected_action": "a1",
+      "action_propensity": 1.0,
+      "decision": {
+        "action_id": "a1",
+        "eligible_actions": [
+          "a1"
+        ],
+        "confidence": null,
+        "reason": "simulated contract fixture",
+        "model_version": "fixture-v1"
+      }
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "no generator version",
+    "kind": "log_event",
+    "value": {
+      "event_id": "event_1",
+      "decision_id": "d_1",
+      "learner_id": "sim_learner_1",
+      "session_id": "sim_session_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "source": "simulated",
+      "simulator_profile": {
+        "family": "contract_fixture",
+        "profile_id": "profile_1",
+        "seed": 42
+      },
+      "event_type": "decision",
+      "context_before_action": {
+        "snapshot_id": "snap_1",
+        "decision_time": "2026-10-15T18:45:00.000Z",
+        "skill_estimate": 0.5,
+        "recent_results": [
+          {
+            "decision_id": "d_0",
+            "outcome_time": "2026-10-15T18:44:00.000Z",
+            "success": true,
+            "independent": false
+          }
+        ],
+        "hint_history": [
+          {
+            "time": "2026-10-15T18:44:00.000Z",
+            "count": 1
+          }
+        ],
+        "confirmed_requests": [],
+        "c3_risk": {
+          "value": 0.6,
+          "confidence": 0.8,
+          "observed_at": "2026-10-15T18:44:00.000Z",
+          "expires_at": "2026-10-15T18:46:00.000Z"
+        },
+        "teacher_limits": {
+          "approved_actions": [
+            "a1",
+            "a2"
+          ],
+          "allowed_actions": [
+            "a1"
+          ],
+          "max_failure_sequence": 3
+        }
+      },
+      "eligible_actions": [
+        "a1"
+      ],
+      "selected_action": "a1",
+      "action_propensity": 1.0,
+      "decision": {
+        "action_id": "a1",
+        "eligible_actions": [
+          "a1"
+        ],
+        "confidence": null,
+        "reason": "simulated contract fixture",
+        "model_version": "fixture-v1"
+      }
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "no pseudonym prefix",
+    "kind": "log_event",
+    "value": {
+      "event_id": "event_1",
+      "decision_id": "d_1",
+      "learner_id": "Alice",
+      "session_id": "sim_session_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "source": "simulated",
+      "simulator_profile": {
+        "family": "contract_fixture",
+        "profile_id": "profile_1",
+        "generator_version": "fixture-v1",
+        "seed": 42
+      },
+      "event_type": "decision",
+      "context_before_action": {
+        "snapshot_id": "snap_1",
+        "decision_time": "2026-10-15T18:45:00.000Z",
+        "skill_estimate": 0.5,
+        "recent_results": [
+          {
+            "decision_id": "d_0",
+            "outcome_time": "2026-10-15T18:44:00.000Z",
+            "success": true,
+            "independent": false
+          }
+        ],
+        "hint_history": [
+          {
+            "time": "2026-10-15T18:44:00.000Z",
+            "count": 1
+          }
+        ],
+        "confirmed_requests": [],
+        "c3_risk": {
+          "value": 0.6,
+          "confidence": 0.8,
+          "observed_at": "2026-10-15T18:44:00.000Z",
+          "expires_at": "2026-10-15T18:46:00.000Z"
+        },
+        "teacher_limits": {
+          "approved_actions": [
+            "a1",
+            "a2"
+          ],
+          "allowed_actions": [
+            "a1"
+          ],
+          "max_failure_sequence": 3
+        }
+      },
+      "eligible_actions": [
+        "a1"
+      ],
+      "selected_action": "a1",
+      "action_propensity": 1.0,
+      "decision": {
+        "action_id": "a1",
+        "eligible_actions": [
+          "a1"
+        ],
+        "confidence": null,
+        "reason": "simulated contract fixture",
+        "model_version": "fixture-v1"
+      }
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "outcome leakage",
+    "kind": "log_event",
+    "value": {
+      "event_id": "event_1",
+      "decision_id": "d_1",
+      "learner_id": "sim_learner_1",
+      "session_id": "sim_session_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "source": "simulated",
+      "simulator_profile": {
+        "family": "contract_fixture",
+        "profile_id": "profile_1",
+        "generator_version": "fixture-v1",
+        "seed": 42
+      },
+      "event_type": "decision",
+      "context_before_action": {
+        "snapshot_id": "snap_1",
+        "decision_time": "2026-10-15T18:45:00.000Z",
+        "skill_estimate": 0.5,
+        "recent_results": [
+          {
+            "decision_id": "d_0",
+            "outcome_time": "2026-10-15T18:44:00.000Z",
+            "success": true,
+            "independent": false
+          }
+        ],
+        "hint_history": [
+          {
+            "time": "2026-10-15T18:44:00.000Z",
+            "count": 1
+          }
+        ],
+        "confirmed_requests": [],
+        "c3_risk": {
+          "value": 0.6,
+          "confidence": 0.8,
+          "observed_at": "2026-10-15T18:44:00.000Z",
+          "expires_at": "2026-10-15T18:46:00.000Z"
+        },
+        "teacher_limits": {
+          "approved_actions": [
+            "a1",
+            "a2"
+          ],
+          "allowed_actions": [
+            "a1"
+          ],
+          "max_failure_sequence": 3
+        }
+      },
+      "eligible_actions": [
+        "a1"
+      ],
+      "selected_action": "a1",
+      "action_propensity": 1.0,
+      "decision": {
+        "action_id": "a1",
+        "eligible_actions": [
+          "a1"
+        ],
+        "confidence": null,
+        "reason": "simulated contract fixture",
+        "model_version": "fixture-v1"
+      },
+      "outcome": true
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "current decision in history",
+    "kind": "log_event",
+    "value": {
+      "event_id": "event_1",
+      "decision_id": "d_1",
+      "learner_id": "sim_learner_1",
+      "session_id": "sim_session_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "source": "simulated",
+      "simulator_profile": {
+        "family": "contract_fixture",
+        "profile_id": "profile_1",
+        "generator_version": "fixture-v1",
+        "seed": 42
+      },
+      "event_type": "decision",
+      "context_before_action": {
+        "snapshot_id": "snap_1",
+        "decision_time": "2026-10-15T18:45:00.000Z",
+        "skill_estimate": 0.5,
+        "recent_results": [
+          {
+            "decision_id": "d_1",
+            "outcome_time": "2026-10-15T18:44:00.000Z",
+            "success": true,
+            "independent": false
+          }
+        ],
+        "hint_history": [
+          {
+            "time": "2026-10-15T18:44:00.000Z",
+            "count": 1
+          }
+        ],
+        "confirmed_requests": [],
+        "c3_risk": {
+          "value": 0.6,
+          "confidence": 0.8,
+          "observed_at": "2026-10-15T18:44:00.000Z",
+          "expires_at": "2026-10-15T18:46:00.000Z"
+        },
+        "teacher_limits": {
+          "approved_actions": [
+            "a1",
+            "a2"
+          ],
+          "allowed_actions": [
+            "a1"
+          ],
+          "max_failure_sequence": 3
+        }
+      },
+      "eligible_actions": [
+        "a1"
+      ],
+      "selected_action": "a1",
+      "action_propensity": 1.0,
+      "decision": {
+        "action_id": "a1",
+        "eligible_actions": [
+          "a1"
+        ],
+        "confidence": null,
+        "reason": "simulated contract fixture",
+        "model_version": "fixture-v1"
+      }
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "break blocks decision",
+    "kind": "log_event",
+    "value": {
+      "event_id": "event_1",
+      "decision_id": "d_1",
+      "learner_id": "sim_learner_1",
+      "session_id": "sim_session_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "source": "simulated",
+      "simulator_profile": {
+        "family": "contract_fixture",
+        "profile_id": "profile_1",
+        "generator_version": "fixture-v1",
+        "seed": 42
+      },
+      "event_type": "decision",
+      "context_before_action": {
+        "snapshot_id": "snap_1",
+        "decision_time": "2026-10-15T18:45:00.000Z",
+        "skill_estimate": 0.5,
+        "recent_results": [
+          {
+            "decision_id": "d_0",
+            "outcome_time": "2026-10-15T18:44:00.000Z",
+            "success": true,
+            "independent": false
+          }
+        ],
+        "hint_history": [
+          {
+            "time": "2026-10-15T18:44:00.000Z",
+            "count": 1
+          }
+        ],
+        "confirmed_requests": [
+          {
+            "kind": "break",
+            "confirmed_at": "2026-10-15T18:44:00.000Z"
+          }
+        ],
+        "c3_risk": {
+          "value": 0.6,
+          "confidence": 0.8,
+          "observed_at": "2026-10-15T18:44:00.000Z",
+          "expires_at": "2026-10-15T18:46:00.000Z"
+        },
+        "teacher_limits": {
+          "approved_actions": [
+            "a1",
+            "a2"
+          ],
+          "allowed_actions": [
+            "a1"
+          ],
+          "max_failure_sequence": 3
+        }
+      },
+      "eligible_actions": [
+        "a1"
+      ],
+      "selected_action": "a1",
+      "action_propensity": 1.0,
+      "decision": {
+        "action_id": "a1",
+        "eligible_actions": [
+          "a1"
+        ],
+        "confidence": null,
+        "reason": "simulated contract fixture",
+        "model_version": "fixture-v1"
+      }
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "mismatched action",
+    "kind": "log_event",
+    "value": {
+      "event_id": "event_1",
+      "decision_id": "d_1",
+      "learner_id": "sim_learner_1",
+      "session_id": "sim_session_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "source": "simulated",
+      "simulator_profile": {
+        "family": "contract_fixture",
+        "profile_id": "profile_1",
+        "generator_version": "fixture-v1",
+        "seed": 42
+      },
+      "event_type": "decision",
+      "context_before_action": {
+        "snapshot_id": "snap_1",
+        "decision_time": "2026-10-15T18:45:00.000Z",
+        "skill_estimate": 0.5,
+        "recent_results": [
+          {
+            "decision_id": "d_0",
+            "outcome_time": "2026-10-15T18:44:00.000Z",
+            "success": true,
+            "independent": false
+          }
+        ],
+        "hint_history": [
+          {
+            "time": "2026-10-15T18:44:00.000Z",
+            "count": 1
+          }
+        ],
+        "confirmed_requests": [],
+        "c3_risk": {
+          "value": 0.6,
+          "confidence": 0.8,
+          "observed_at": "2026-10-15T18:44:00.000Z",
+          "expires_at": "2026-10-15T18:46:00.000Z"
+        },
+        "teacher_limits": {
+          "approved_actions": [
+            "a1",
+            "a2"
+          ],
+          "allowed_actions": [
+            "a1"
+          ],
+          "max_failure_sequence": 3
+        }
+      },
+      "eligible_actions": [
+        "a1"
+      ],
+      "selected_action": "a2",
+      "action_propensity": 1.0,
+      "decision": {
+        "action_id": "a1",
+        "eligible_actions": [
+          "a1"
+        ],
+        "confidence": null,
+        "reason": "simulated contract fixture",
+        "model_version": "fixture-v1"
+      }
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "mismatched time",
+    "kind": "log_event",
+    "value": {
+      "event_id": "event_1",
+      "decision_id": "d_1",
+      "learner_id": "sim_learner_1",
+      "session_id": "sim_session_1",
+      "decision_time": "2026-10-15T18:46:00.000Z",
+      "source": "simulated",
+      "simulator_profile": {
+        "family": "contract_fixture",
+        "profile_id": "profile_1",
+        "generator_version": "fixture-v1",
+        "seed": 42
+      },
+      "event_type": "decision",
+      "context_before_action": {
+        "snapshot_id": "snap_1",
+        "decision_time": "2026-10-15T18:45:00.000Z",
+        "skill_estimate": 0.5,
+        "recent_results": [
+          {
+            "decision_id": "d_0",
+            "outcome_time": "2026-10-15T18:44:00.000Z",
+            "success": true,
+            "independent": false
+          }
+        ],
+        "hint_history": [
+          {
+            "time": "2026-10-15T18:44:00.000Z",
+            "count": 1
+          }
+        ],
+        "confirmed_requests": [],
+        "c3_risk": {
+          "value": 0.6,
+          "confidence": 0.8,
+          "observed_at": "2026-10-15T18:44:00.000Z",
+          "expires_at": "2026-10-15T18:46:00.000Z"
+        },
+        "teacher_limits": {
+          "approved_actions": [
+            "a1",
+            "a2"
+          ],
+          "allowed_actions": [
+            "a1"
+          ],
+          "max_failure_sequence": 3
+        }
+      },
+      "eligible_actions": [
+        "a1"
+      ],
+      "selected_action": "a1",
+      "action_propensity": 1.0,
+      "decision": {
+        "action_id": "a1",
+        "eligible_actions": [
+          "a1"
+        ],
+        "confidence": null,
+        "reason": "simulated contract fixture",
+        "model_version": "fixture-v1"
+      }
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "zero propensity",
+    "kind": "log_event",
+    "value": {
+      "event_id": "event_1",
+      "decision_id": "d_1",
+      "learner_id": "sim_learner_1",
+      "session_id": "sim_session_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "source": "simulated",
+      "simulator_profile": {
+        "family": "contract_fixture",
+        "profile_id": "profile_1",
+        "generator_version": "fixture-v1",
+        "seed": 42
+      },
+      "event_type": "decision",
+      "context_before_action": {
+        "snapshot_id": "snap_1",
+        "decision_time": "2026-10-15T18:45:00.000Z",
+        "skill_estimate": 0.5,
+        "recent_results": [
+          {
+            "decision_id": "d_0",
+            "outcome_time": "2026-10-15T18:44:00.000Z",
+            "success": true,
+            "independent": false
+          }
+        ],
+        "hint_history": [
+          {
+            "time": "2026-10-15T18:44:00.000Z",
+            "count": 1
+          }
+        ],
+        "confirmed_requests": [],
+        "c3_risk": {
+          "value": 0.6,
+          "confidence": 0.8,
+          "observed_at": "2026-10-15T18:44:00.000Z",
+          "expires_at": "2026-10-15T18:46:00.000Z"
+        },
+        "teacher_limits": {
+          "approved_actions": [
+            "a1",
+            "a2"
+          ],
+          "allowed_actions": [
+            "a1"
+          ],
+          "max_failure_sequence": 3
+        }
+      },
+      "eligible_actions": [
+        "a1"
+      ],
+      "selected_action": "a1",
+      "action_propensity": 0,
+      "decision": {
+        "action_id": "a1",
+        "eligible_actions": [
+          "a1"
+        ],
+        "confidence": null,
+        "reason": "simulated contract fixture",
+        "model_version": "fixture-v1"
+      }
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "unknown propensity",
+    "kind": "log_event",
+    "value": {
+      "event_id": "event_1",
+      "decision_id": "d_1",
+      "learner_id": "sim_learner_1",
+      "session_id": "sim_session_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "source": "simulated",
+      "simulator_profile": {
+        "family": "contract_fixture",
+        "profile_id": "profile_1",
+        "generator_version": "fixture-v1",
+        "seed": 42
+      },
+      "event_type": "decision",
+      "context_before_action": {
+        "snapshot_id": "snap_1",
+        "decision_time": "2026-10-15T18:45:00.000Z",
+        "skill_estimate": 0.5,
+        "recent_results": [
+          {
+            "decision_id": "d_0",
+            "outcome_time": "2026-10-15T18:44:00.000Z",
+            "success": true,
+            "independent": false
+          }
+        ],
+        "hint_history": [
+          {
+            "time": "2026-10-15T18:44:00.000Z",
+            "count": 1
+          }
+        ],
+        "confirmed_requests": [],
+        "c3_risk": {
+          "value": 0.6,
+          "confidence": 0.8,
+          "observed_at": "2026-10-15T18:44:00.000Z",
+          "expires_at": "2026-10-15T18:46:00.000Z"
+        },
+        "teacher_limits": {
+          "approved_actions": [
+            "a1",
+            "a2"
+          ],
+          "allowed_actions": [
+            "a1"
+          ],
+          "max_failure_sequence": 3
+        }
+      },
+      "eligible_actions": [
+        "a1"
+      ],
+      "selected_action": "a1",
+      "action_propensity": null,
+      "decision": {
+        "action_id": "a1",
+        "eligible_actions": [
+          "a1"
+        ],
+        "confidence": null,
+        "reason": "simulated contract fixture",
+        "model_version": "fixture-v1"
+      }
+    },
+    "expected": {
+      "valid": true,
+      "c3_status": "known"
+    }
+  },
+  {
+    "name": "outcome before decision",
+    "kind": "log_event",
+    "value": {
+      "event_id": "event_2",
+      "decision_id": "d_1",
+      "learner_id": "sim_learner_1",
+      "session_id": "sim_session_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "source": "simulated",
+      "simulator_profile": {
+        "family": "contract_fixture",
+        "profile_id": "profile_1",
+        "generator_version": "fixture-v1",
+        "seed": 42
+      },
+      "event_type": "outcome",
+      "outcome_time": "2026-10-15T18:44:00.000Z",
+      "selected_action": "a1",
+      "outcome": true,
+      "independence": false,
+      "override": false,
+      "distress_annotation": null
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "outcome at decision time",
+    "kind": "log_event",
+    "value": {
+      "event_id": "event_2",
+      "decision_id": "d_1",
+      "learner_id": "sim_learner_1",
+      "session_id": "sim_session_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "source": "simulated",
+      "simulator_profile": {
+        "family": "contract_fixture",
+        "profile_id": "profile_1",
+        "generator_version": "fixture-v1",
+        "seed": 42
+      },
+      "event_type": "outcome",
+      "outcome_time": "2026-10-15T18:45:00.000Z",
+      "selected_action": "a1",
+      "outcome": true,
+      "independence": false,
+      "override": false,
+      "distress_annotation": null
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "outcome missing label",
+    "kind": "log_event",
+    "value": {
+      "event_id": "event_2",
+      "decision_id": "d_1",
+      "learner_id": "sim_learner_1",
+      "session_id": "sim_session_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "source": "simulated",
+      "simulator_profile": {
+        "family": "contract_fixture",
+        "profile_id": "profile_1",
+        "generator_version": "fixture-v1",
+        "seed": 42
+      },
+      "event_type": "outcome",
+      "outcome_time": "2026-10-15T18:46:00.000Z",
+      "selected_action": "a1",
+      "independence": false,
+      "override": false,
+      "distress_annotation": null
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  },
+  {
+    "name": "outcome carries context",
+    "kind": "log_event",
+    "value": {
+      "event_id": "event_2",
+      "decision_id": "d_1",
+      "learner_id": "sim_learner_1",
+      "session_id": "sim_session_1",
+      "decision_time": "2026-10-15T18:45:00.000Z",
+      "source": "simulated",
+      "simulator_profile": {
+        "family": "contract_fixture",
+        "profile_id": "profile_1",
+        "generator_version": "fixture-v1",
+        "seed": 42
+      },
+      "event_type": "outcome",
+      "outcome_time": "2026-10-15T18:46:00.000Z",
+      "selected_action": "a1",
+      "outcome": true,
+      "independence": false,
+      "override": false,
+      "distress_annotation": null,
+      "context_before_action": {
+        "snapshot_id": "snap_1",
+        "decision_time": "2026-10-15T18:45:00.000Z",
+        "skill_estimate": 0.5,
+        "recent_results": [
+          {
+            "decision_id": "d_0",
+            "outcome_time": "2026-10-15T18:44:00.000Z",
+            "success": true,
+            "independent": false
+          }
+        ],
+        "hint_history": [
+          {
+            "time": "2026-10-15T18:44:00.000Z",
+            "count": 1
+          }
+        ],
+        "confirmed_requests": [],
+        "c3_risk": {
+          "value": 0.6,
+          "confidence": 0.8,
+          "observed_at": "2026-10-15T18:44:00.000Z",
+          "expires_at": "2026-10-15T18:46:00.000Z"
+        },
+        "teacher_limits": {
+          "approved_actions": [
+            "a1",
+            "a2"
+          ],
+          "allowed_actions": [
+            "a1"
+          ],
+          "max_failure_sequence": 3
+        }
+      }
+    },
+    "expected": {
+      "valid": false,
+      "c3_status": null
+    }
+  }
+]

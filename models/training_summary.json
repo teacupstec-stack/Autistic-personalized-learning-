@@ -1,0 +1,18 @@
+{
+  "status": "trained_frozen",
+  "train_samples": 4241,
+  "val_samples": 854,
+  "train_metrics": {
+    "bce_loss": 0.5771,
+    "accuracy": 0.706,
+    "brier_score": 0.196,
+    "ece": 0.0084
+  },
+  "val_metrics": {
+    "bce_loss": 0.5969,
+    "accuracy": 0.685,
+    "brier_score": 0.2041,
+    "ece": 0.0333
+  },
+  "architecture": "ContextEncoderMLP (9 -> 32 -> 16 -> 4 logits)"
+}
