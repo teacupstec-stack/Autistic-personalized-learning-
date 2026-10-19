@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
 import data.generate_dataset as gen_data
+import data.public_benchmark as public_mod
 import train.train_response as train_mod
 import eval.evaluate_policy as eval_mod
 import models.export_onnx as export_mod
@@ -54,20 +55,24 @@ def main():
     print_banner(2, "Generating Simulated Dataset & Partitioning Splits")
     gen_data.main()
 
-    # 3. Model Training
-    print_banner(3, "Training Context-only Neural Response Encoder")
+    # 3. Public Dataset Benchmark
+    print_banner(3, "Evaluating Public Dataset Benchmark (EdNet KT1)")
+    public_mod.main()
+
+    # 4. Model Training
+    print_banner(4, "Training Context-only Neural Response Encoder")
     train_mod.main()
 
-    # 4. Policy Evaluation
-    print_banner(4, "Evaluating Policies on Held-Out Profiles (Unseen Families)")
+    # 5. Policy Evaluation
+    print_banner(5, "Evaluating Policies on Held-Out Profiles (Unseen Families)")
     eval_mod.main()
 
-    # 5. Model Export
-    print_banner(5, "Exporting Model for Browser & ONNX Web Runtime")
+    # 6. Model Export
+    print_banner(6, "Exporting Model for Browser & ONNX Web Runtime")
     export_mod.export_to_onnx()
 
-    # 6. Interactive Demo
-    print_banner(6, "Executing Interactive Classroom User-Flow Demo")
+    # 7. Interactive Demo
+    print_banner(7, "Executing Interactive Classroom User-Flow Demo")
     demo_mod.run_demo()
 
     elapsed = round(time.time() - start_total, 2)

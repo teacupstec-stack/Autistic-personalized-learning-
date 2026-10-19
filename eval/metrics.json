@@ -46,62 +46,62 @@
     },
     {
       "policy_name": "Linear_Bandit",
-      "mean_cumulative_reward": 6.32,
+      "mean_cumulative_reward": 6.28,
       "ci_95": [
-        4.88,
-        7.73
+        4.85,
+        7.68
       ],
       "constraint_violations": 0,
-      "mean_one_step_regret": 0.145,
+      "mean_one_step_regret": 0.1444,
       "max_failure_run": 17,
       "mean_failure_run": 0.95,
-      "success_rate": 0.5,
-      "independence_rate": 0.346,
+      "success_rate": 0.499,
+      "independence_rate": 0.344,
       "evaluated_episodes": 100
     },
     {
       "policy_name": "SCPA_NoSharedSignals",
-      "mean_cumulative_reward": 7.19,
+      "mean_cumulative_reward": 7.13,
       "ci_95": [
-        5.81,
-        8.59
+        5.8,
+        8.52
       ],
       "constraint_violations": 0,
-      "mean_one_step_regret": 0.1447,
-      "max_failure_run": 15,
-      "mean_failure_run": 0.84,
-      "success_rate": 0.534,
-      "independence_rate": 0.364,
+      "mean_one_step_regret": 0.146,
+      "max_failure_run": 17,
+      "mean_failure_run": 0.85,
+      "success_rate": 0.531,
+      "independence_rate": 0.363,
       "evaluated_episodes": 100
     },
     {
       "policy_name": "SCPA_NoConfidenceWeight",
-      "mean_cumulative_reward": 7.06,
+      "mean_cumulative_reward": 6.78,
       "ci_95": [
-        5.67,
-        8.48
+        5.42,
+        8.15
       ],
       "constraint_violations": 0,
-      "mean_one_step_regret": 0.1404,
-      "max_failure_run": 15,
-      "mean_failure_run": 0.87,
-      "success_rate": 0.525,
-      "independence_rate": 0.37,
+      "mean_one_step_regret": 0.142,
+      "max_failure_run": 17,
+      "mean_failure_run": 0.9,
+      "success_rate": 0.514,
+      "independence_rate": 0.364,
       "evaluated_episodes": 100
     },
     {
       "policy_name": "SCPA_Full",
-      "mean_cumulative_reward": 7.14,
+      "mean_cumulative_reward": 7.0,
       "ci_95": [
-        5.74,
-        8.5
+        5.64,
+        8.39
       ],
       "constraint_violations": 0,
-      "mean_one_step_regret": 0.1379,
-      "max_failure_run": 15,
-      "mean_failure_run": 0.86,
-      "success_rate": 0.527,
-      "independence_rate": 0.375,
+      "mean_one_step_regret": 0.138,
+      "max_failure_run": 17,
+      "mean_failure_run": 0.87,
+      "success_rate": 0.523,
+      "independence_rate": 0.368,
       "evaluated_episodes": 100
     }
   ]

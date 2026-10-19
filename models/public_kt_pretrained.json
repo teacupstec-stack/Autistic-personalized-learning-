@@ -1,0 +1,26 @@
+{
+  "model_type": "Public_EdNet_Knowledge_Tracing",
+  "weights": [
+    0.017,
+    0.032,
+    -0.0611,
+    0.093,
+    0.0636
+  ],
+  "feature_names": [
+    "bias",
+    "prior_skill",
+    "difficulty",
+    "skill_margin",
+    "log_elapsed_time"
+  ],
+  "test_accuracy": 0.614,
+  "test_brier_score": 0.2375,
+  "train_interactions": 2000,
+  "test_interactions": 500,
+  "provenance": {
+    "source": "EdNet (by Riiid Labs)",
+    "license": "CC BY-NC 4.0",
+    "repo": "https://github.com/riiid/ednet"
+  }
+}

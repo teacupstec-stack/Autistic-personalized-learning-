@@ -153,6 +153,7 @@ def create_pdf(filename="COMPONENT_2_COMPLETE_GUIDE.pdf"):
         ["contracts/schema.json", "Contract Authority", "JSON Schema Draft 2020-12 defining Snapshot, Decision, and LogEvent wire formats."],
         ["contracts/validate.py", "Python Validator", "Python jsonschema validation engine with calendar and semantic invariant checks."],
         ["dist/validate.js", "Node Validator", "Pre-compiled Node.js contract validator for cross-language verification."],
+        ["data/public_benchmark.py", "Public Benchmark", "EdNet-KT1 public dataset processor, sequence joining, and KT benchmark."],
         ["app/interactive_session.py", "Interactive App", "Live student quiz simulation displaying questions, ASCII icons, hints, and breaks."],
         ["demo.py", "Presenter Demo", "Zero-dependency automated presentation runner showcasing the 5-step human flow."],
         ["run_all.py", "Master Pipeline", "Single-command runner executing all stages from generation to evaluation in 37s."]
