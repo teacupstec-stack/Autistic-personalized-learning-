@@ -1,13 +1,30 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "commonjs",
-    "strict": true,
+    "useDefineForClassFields": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": false,
     "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true,
     "esModuleInterop": true,
-    "outDir": "dist"
+    "types": ["@testing-library/jest-dom/vitest"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "contracts/*": ["contracts/*"],
+      "content/*": ["content/*"],
+      "models/*": ["models/*"],
+      "eval/*": ["eval/*"]
+    }
   },
-  "include": [
-    "contracts/**/*.ts"
-  ]
+  "include": ["src", "contracts", "tests"]
 }

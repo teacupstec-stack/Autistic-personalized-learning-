@@ -1,0 +1,58 @@
+================================================================================
+C2 LEARNING PERSONALISATION (SCPA CONTEXTUAL BANDIT) - RUN COMMANDS
+================================================================================
+
+PREREQUISITES:
+  - Node.js >= 18 (e.g., v24.9.0)
+  - Python >= 3.10 (e.g., Python 3.14)
+
+--------------------------------------------------------------------------------
+1. INSTALLATION & SETUP
+--------------------------------------------------------------------------------
+Install Node dependencies:
+  npm install
+
+--------------------------------------------------------------------------------
+2. RUNNING THE WEB APPLICATION (FRONTEND)
+--------------------------------------------------------------------------------
+Start local development server:
+  npm run dev
+
+  -> Open in browser: http://localhost:3000
+
+--------------------------------------------------------------------------------
+3. BUILDING FOR PRODUCTION
+--------------------------------------------------------------------------------
+Type check & build production bundle:
+  npm run build
+
+  -> Output saved to: ./build
+
+Preview production build locally:
+  npm run preview
+
+--------------------------------------------------------------------------------
+4. RUNNING TESTS
+--------------------------------------------------------------------------------
+Run full test suite (TypeScript Contracts + Vitest UI/Integration):
+  npm test
+
+Run only contract JSON Schema validation tests:
+  npm run test:contracts
+
+Run only Vitest UI and unit tests:
+  npm run test:ui
+
+--------------------------------------------------------------------------------
+5. RUNNING PYTHON BACKEND & ML PIPELINE
+--------------------------------------------------------------------------------
+Execute complete end-to-end ML training & evaluation pipeline:
+  python3 run_all.py
+
+Run interactive classroom demonstration script:
+  python3 demo.py
+
+Run terminal-based student learning session:
+  python3 app/interactive_session.py
+
+================================================================================

@@ -1,18 +1,18 @@
 {
   "status": "trained_frozen",
-  "train_samples": 4225,
-  "val_samples": 845,
+  "train_samples": 4250,
+  "val_samples": 847,
   "train_metrics": {
-    "bce_loss": 0.5705,
-    "accuracy": 0.7084,
-    "brier_score": 0.1936,
-    "ece": 0.0143
+    "bce_loss": 0.5818,
+    "accuracy": 0.6965,
+    "brier_score": 0.1984,
+    "ece": 0.0131
   },
   "val_metrics": {
-    "bce_loss": 0.5941,
-    "accuracy": 0.6923,
-    "brier_score": 0.2033,
-    "ece": 0.0257
+    "bce_loss": 0.5895,
+    "accuracy": 0.6954,
+    "brier_score": 0.2015,
+    "ece": 0.0119
   },
   "architecture": "ContextEncoderMLP (9 -> 32 -> 16 -> 4 logits)"
 }
