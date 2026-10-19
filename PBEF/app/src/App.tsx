@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ParticipationAnnotationTool } from './annotation_tool';
 
 // -----------------------------------------------------------------------------
-// Sample Simulated Session Data for Live Demonstration
+// Sample Simulated Session Data for Demonstration
 // -----------------------------------------------------------------------------
 interface TimelinePoint {
   timeSec: number;
@@ -35,7 +35,7 @@ function generateDemoSession(type: 'calm' | 'regulating' | 'onset'): TimelinePoi
         pace = 0.2;
         inactivitySec = t - 90;
         latencyMs = 2800;
-        gazeRatio = 0.35; // Looking away but self-soothing!
+        gazeRatio = 0.35; // Looking away for self-soothing, NOT disengagement
         yawVar = 0.18;
       }
     } else if (type === 'onset') {
@@ -77,7 +77,7 @@ export const App: React.FC = () => {
   const [currentTimeSec, setCurrentTimeSec] = useState<number>(65); // Start after 60s calibration
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
-  const [modelMode, setModelMode] = useState<'modeA' | 'modeB'>('modeB'); // Mode B interaction-only by default!
+  const [modelMode, setModelMode] = useState<'modeB' | 'modeA'>('modeB'); // Mode B interaction-only by default
   const [cameraActive, setCameraActive] = useState<boolean>(true);
   const [lastAlertTime, setLastAlertTime] = useState<number>(-100);
 
@@ -96,29 +96,21 @@ export const App: React.FC = () => {
   const forecastRisk = useMemo(() => {
     if (currentTimeSec < 60) return 0.05; // Initial personal calibration period
 
-    // Mean latency in last 30s
     const meanLatency = windowData.reduce((acc, p) => acc + p.latencyMs, 0) / Math.max(1, windowData.length);
     const meanPace = windowData.reduce((acc, p) => acc + p.pace, 0) / Math.max(1, windowData.length);
     const maxInactivity = Math.max(...windowData.map((p) => p.inactivitySec), 0);
 
-    // Baseline personal reference (from t=0..60s)
     const personalBaseLatency = 1300;
     const latencyRatio = meanLatency / personalBaseLatency;
 
     let logit = -3.2 + (latencyRatio - 1.0) * 3.8 + (maxInactivity / 5.0) * 2.2 - meanPace * 1.5;
 
     // Multimodal contribution if Mode A and camera is valid
-    if (modelMode === 'modeA') {
-      if (cameraActive) {
-        const gazeMean = windowData.reduce((acc, p) => acc + p.gazeRatio, 0) / Math.max(1, windowData.length);
-        logit += (1 - gazeMean) * 0.8;
-      } else {
-        // Camera masked fallback: Multimodal Reliability Gate isolates interaction
-        // Prediction remains stable and slightly regularized
-      }
+    if (modelMode === 'modeA' && cameraActive) {
+      const gazeMean = windowData.reduce((acc, p) => acc + p.gazeRatio, 0) / Math.max(1, windowData.length);
+      logit += (1 - gazeMean) * 0.8;
     }
 
-    // Sigmoid
     const prob = 1 / (1 + Math.exp(-logit));
     return Math.min(0.98, Math.max(0.02, prob));
   }, [windowData, currentTimeSec, modelMode, cameraActive]);
@@ -152,13 +144,13 @@ export const App: React.FC = () => {
   }, [isPlaying, playbackSpeed]);
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#090d16', color: '#f8fafc', fontFamily: 'Inter, sans-serif' }}>
-      {/* Top Navbar */}
+    <div style={{ minHeight: '100vh', backgroundColor: '#0b0f17', color: '#f1f5f9', fontFamily: 'Inter, sans-serif' }}>
+      {/* Minimal Top Header */}
       <header
         style={{
           borderBottom: '1px solid #1e293b',
           backgroundColor: '#0f172a',
-          padding: '14px 24px',
+          padding: '12px 24px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -166,68 +158,66 @@ export const App: React.FC = () => {
           gap: '12px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div
             style={{
-              width: '38px',
-              height: '38px',
-              borderRadius: '10px',
-              background: 'linear-gradient(135deg, #3b82f6, #06b6d4)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 'bold',
-              fontSize: '18px',
-              color: '#fff',
-              boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              backgroundColor: '#1e293b',
+              border: '1px solid #334155',
+              fontSize: '12px',
+              fontWeight: '700',
+              color: '#38bdf8',
+              letterSpacing: '0.05em',
             }}
           >
             C3
           </div>
           <div>
-            <h1 style={{ fontSize: '18px', fontWeight: 'bold', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              PBEF Component 3 — Participation Forecasting
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h1 style={{ fontSize: '15px', fontWeight: '600', color: '#f1f5f9' }}>
+                PBEF Component 3: Participation Forecasting
+              </h1>
               <span
                 style={{
                   fontSize: '11px',
-                  fontWeight: '600',
-                  padding: '2px 8px',
-                  borderRadius: '12px',
-                  backgroundColor: '#1e3a8a',
-                  color: '#93c5fd',
+                  fontWeight: '500',
+                  padding: '1px 6px',
+                  borderRadius: '3px',
+                  backgroundColor: '#1e293b',
+                  color: '#94a3b8',
+                  border: '1px solid #334155',
                 }}
               >
                 PP1 Ready
               </span>
-            </h1>
-            <p style={{ fontSize: '12px', color: '#94a3b8' }}>
-              Personal-Baseline Sequence Forecaster & Educator Annotation Suite (PBEF)
+            </div>
+            <p style={{ fontSize: '11px', color: '#64748b' }}>
+              Personal-Baseline Telemetry & Educator Decision Support System
             </p>
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <nav style={{ display: 'flex', gap: '6px', backgroundColor: '#131d35', padding: '4px', borderRadius: '10px' }}>
+        {/* Minimal Tab Switcher */}
+        <nav style={{ display: 'flex', gap: '2px', backgroundColor: '#0b0f17', padding: '3px', borderRadius: '6px', border: '1px solid #1e293b' }}>
           {[
-            { id: 'live', label: '1. Live Forecaster Demo' },
-            { id: 'annotation', label: '2. Educator Annotation Tool' },
-            { id: 'benchmark', label: '3. Benchmark & Audit' },
-            { id: 'ethics', label: '4. Ethical Safeguards' },
+            { id: 'live', label: 'Live Forecaster' },
+            { id: 'annotation', label: 'Annotation Tool' },
+            { id: 'benchmark', label: 'Benchmark Results' },
+            { id: 'ethics', label: 'Ethical Guidelines' },
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
               style={{
-                padding: '8px 14px',
-                borderRadius: '8px',
-                fontSize: '13px',
-                fontWeight: '600',
+                padding: '6px 14px',
+                borderRadius: '4px',
+                fontSize: '12px',
+                fontWeight: '500',
                 border: 'none',
                 cursor: 'pointer',
-                transition: 'all 0.15s ease',
-                backgroundColor: activeTab === tab.id ? '#2563eb' : 'transparent',
-                color: activeTab === tab.id ? '#ffffff' : '#94a3b8',
-                boxShadow: activeTab === tab.id ? '0 2px 8px rgba(37, 99, 235, 0.4)' : 'none',
+                backgroundColor: activeTab === tab.id ? '#1e293b' : 'transparent',
+                color: activeTab === tab.id ? '#f1f5f9' : '#94a3b8',
               }}
             >
               {tab.label}
@@ -236,31 +226,31 @@ export const App: React.FC = () => {
         </nav>
       </header>
 
-      {/* Main Content Area */}
-      <main style={{ padding: '24px', maxWidth: '1440px', margin: '0 auto' }}>
+      {/* Main Body */}
+      <main style={{ padding: '20px 24px', maxWidth: '1400px', margin: '0 auto' }}>
         {/* =================================================================== */}
         {/* TAB 1: LIVE FORECASTER DEMO */}
         {/* =================================================================== */}
         {activeTab === 'live' && (
           <div>
-            {/* Top Control Ribbon */}
+            {/* Top Control Bar */}
             <div
               style={{
-                backgroundColor: '#131d35',
-                border: '1px solid #1e293b',
-                borderRadius: '14px',
-                padding: '18px 24px',
-                marginBottom: '20px',
+                backgroundColor: '#121826',
+                border: '1px solid #202b3e',
+                borderRadius: '8px',
+                padding: '14px 18px',
+                marginBottom: '16px',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 flexWrap: 'wrap',
-                gap: '16px',
+                gap: '12px',
               }}
             >
-              {/* Scenario Preset Selector */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '13px', fontWeight: '600', color: '#94a3b8' }}>Session Scenario:</span>
+              {/* Scenario Selector */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '12px', fontWeight: '500', color: '#64748b' }}>Scenario:</span>
                 <select
                   value={sessionType}
                   onChange={(e) => {
@@ -269,67 +259,65 @@ export const App: React.FC = () => {
                     setIsPlaying(false);
                   }}
                   style={{
-                    backgroundColor: '#0f172a',
-                    border: '1px solid #334155',
-                    color: '#f8fafc',
-                    padding: '8px 14px',
-                    borderRadius: '8px',
-                    fontSize: '13px',
+                    backgroundColor: '#0b0f17',
+                    border: '1px solid #2d3b55',
+                    color: '#f1f5f9',
+                    padding: '6px 10px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
                     cursor: 'pointer',
+                    outline: 'none',
                   }}
                 >
-                  <option value="onset">Scenario A: Held-Out Clinical Decrease Onset (P40 / L003)</option>
-                  <option value="regulating">Scenario B: Autistic Self-Regulation (Stimming — Non-Decrease)</option>
+                  <option value="onset">Scenario A: Held-Out Decrease Onset (P40 / L003)</option>
+                  <option value="regulating">Scenario B: Autistic Self-Regulation (Stimming - Non-Decrease)</option>
                   <option value="calm">Scenario C: Continuous Active Task Engagement</option>
                 </select>
               </div>
 
               {/* Playback Controls */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <button
                   onClick={() => setIsPlaying(!isPlaying)}
                   style={{
-                    backgroundColor: isPlaying ? '#e11d48' : '#10b981',
+                    backgroundColor: isPlaying ? '#be123c' : '#047857',
                     color: '#ffffff',
-                    padding: '8px 18px',
-                    borderRadius: '8px',
-                    fontSize: '13px',
-                    fontWeight: 'bold',
+                    padding: '6px 14px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: '600',
                     border: 'none',
                     cursor: 'pointer',
-                    boxShadow: isPlaying
-                      ? '0 0 12px rgba(225, 29, 72, 0.4)'
-                      : '0 0 12px rgba(16, 185, 129, 0.4)',
                   }}
                 >
-                  {isPlaying ? '⏸ Pause' : '▶ Play Session'}
+                  {isPlaying ? 'Pause' : 'Play Session'}
                 </button>
 
                 <button
                   onClick={() => setCurrentTimeSec(60)}
                   style={{
-                    backgroundColor: '#1e293b',
-                    color: '#cbd5e1',
-                    padding: '8px 14px',
-                    borderRadius: '8px',
-                    fontSize: '13px',
-                    border: '1px solid #334155',
+                    backgroundColor: '#1a2234',
+                    color: '#94a3b8',
+                    padding: '6px 12px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    border: '1px solid #2d3b55',
                     cursor: 'pointer',
                   }}
                 >
-                  ⏮ Reset to 60s
+                  Reset (60s)
                 </button>
 
-                <div style={{ display: 'flex', gap: '4px', backgroundColor: '#0f172a', padding: '3px', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', backgroundColor: '#0b0f17', border: '1px solid #202b3e', borderRadius: '4px', padding: '2px' }}>
                   {[1, 2, 5].map((spd) => (
                     <button
                       key={spd}
                       onClick={() => setPlaybackSpeed(spd)}
                       style={{
-                        padding: '4px 10px',
-                        borderRadius: '6px',
+                        padding: '3px 8px',
+                        borderRadius: '3px',
                         fontSize: '11px',
-                        fontWeight: '600',
+                        fontWeight: '500',
                         border: 'none',
                         cursor: 'pointer',
                         backgroundColor: playbackSpeed === spd ? '#2563eb' : 'transparent',
@@ -342,35 +330,35 @@ export const App: React.FC = () => {
                 </div>
               </div>
 
-              {/* Mode & Reliability Gate Switchers */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ display: 'flex', backgroundColor: '#0f172a', padding: '3px', borderRadius: '8px' }}>
+              {/* Mode & Gate Toggles */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', backgroundColor: '#0b0f17', border: '1px solid #202b3e', borderRadius: '4px', padding: '2px' }}>
                   <button
                     onClick={() => setModelMode('modeB')}
                     style={{
-                      padding: '6px 12px',
-                      borderRadius: '6px',
-                      fontSize: '12px',
-                      fontWeight: '600',
+                      padding: '4px 10px',
+                      borderRadius: '3px',
+                      fontSize: '11px',
+                      fontWeight: '500',
                       border: 'none',
                       cursor: 'pointer',
-                      backgroundColor: modelMode === 'modeB' ? '#3b82f6' : 'transparent',
-                      color: modelMode === 'modeB' ? '#ffffff' : '#94a3b8',
+                      backgroundColor: modelMode === 'modeB' ? '#1e293b' : 'transparent',
+                      color: modelMode === 'modeB' ? '#38bdf8' : '#94a3b8',
                     }}
                   >
-                    Mode B: Interaction-Only (No Sensors)
+                    Mode B: Interaction-Only
                   </button>
                   <button
                     onClick={() => setModelMode('modeA')}
                     style={{
-                      padding: '6px 12px',
-                      borderRadius: '6px',
-                      fontSize: '12px',
-                      fontWeight: '600',
+                      padding: '4px 10px',
+                      borderRadius: '3px',
+                      fontSize: '11px',
+                      fontWeight: '500',
                       border: 'none',
                       cursor: 'pointer',
-                      backgroundColor: modelMode === 'modeA' ? '#3b82f6' : 'transparent',
-                      color: modelMode === 'modeA' ? '#ffffff' : '#94a3b8',
+                      backgroundColor: modelMode === 'modeA' ? '#1e293b' : 'transparent',
+                      color: modelMode === 'modeA' ? '#38bdf8' : '#94a3b8',
                     }}
                   >
                     Mode A: Multimodal TCN
@@ -381,36 +369,34 @@ export const App: React.FC = () => {
                   <button
                     onClick={() => setCameraActive(!cameraActive)}
                     style={{
-                      padding: '6px 12px',
-                      borderRadius: '6px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      border: 'none',
+                      padding: '5px 10px',
+                      borderRadius: '4px',
+                      fontSize: '11px',
+                      fontWeight: '500',
+                      border: cameraActive ? '1px solid #065f46' : '1px solid #881337',
                       cursor: 'pointer',
-                      backgroundColor: cameraActive ? '#065f46' : '#831843',
-                      color: cameraActive ? '#6ee7b7' : '#fbcfe8',
-                      boxShadow: cameraActive
-                        ? '0 0 10px rgba(16, 185, 129, 0.2)'
-                        : '0 0 10px rgba(244, 63, 94, 0.3)',
+                      backgroundColor: cameraActive ? '#064e3b' : '#7f1d1d',
+                      color: cameraActive ? '#a7f3d0' : '#fecaca',
                     }}
                   >
-                    {cameraActive ? '📷 Camera: Connected' : '🚫 Camera: Disconnected (Fallback Active)'}
+                    {cameraActive ? 'Camera: Active' : 'Camera: Disconnected (Fallback)'}
                   </button>
                 )}
               </div>
             </div>
 
-            {/* Live Progress Scrubber */}
-            <div style={{ backgroundColor: '#131d35', padding: '16px 20px', borderRadius: '12px', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
+            {/* Session Timeline Scrubber */}
+            <div style={{ backgroundColor: '#121826', padding: '14px 18px', borderRadius: '8px', border: '1px solid #202b3e', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '12px' }}>
                 <span style={{ color: '#94a3b8' }}>
-                  Session Time: <b style={{ color: '#f8fafc' }}>{currentTimeSec}s</b> / 240s
+                  Session Clock: <b style={{ color: '#f1f5f9' }}>{currentTimeSec}s</b> / 240s
                 </span>
-                <span style={{ color: '#38bdf8', fontWeight: '500' }}>
-                  Observation Window: <b>[{Math.max(0, currentTimeSec - 30)}s → {currentTimeSec}s]</b> &nbsp;|&nbsp; Target Horizon: <b>[{currentTimeSec}s → {currentTimeSec + 20}s]</b>
+                <span style={{ color: '#64748b' }}>
+                  History Input: <b style={{ color: '#94a3b8' }}>[{Math.max(0, currentTimeSec - 30)}s → {currentTimeSec}s]</b> &nbsp;|&nbsp;
+                  Forecast Horizon: <b style={{ color: '#38bdf8' }}>[{currentTimeSec}s → {currentTimeSec + 20}s]</b>
                 </span>
-                <span style={{ color: currentTimeSec >= 60 ? '#34d399' : '#f59e0b' }}>
-                  {currentTimeSec >= 60 ? '✓ Zero-Leakage Window Active (t ≥ 60s)' : '⏳ Baseline Calibration Period (t < 60s)'}
+                <span style={{ color: currentTimeSec >= 60 ? '#10b981' : '#f59e0b', fontSize: '11px' }}>
+                  {currentTimeSec >= 60 ? '✓ Zero-Leakage Window (t ≥ 60s)' : '⏳ Calibration Phase (t < 60s)'}
                 </span>
               </div>
               <input
@@ -423,37 +409,36 @@ export const App: React.FC = () => {
                   width: '100%',
                   cursor: 'pointer',
                   accentColor: '#3b82f6',
+                  height: '4px',
                 }}
               />
             </div>
 
-            {/* Main Interactive Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.8fr', gap: '20px', marginBottom: '20px' }}>
-              {/* Left Column: Live Risk Gauge & Alerts */}
+            {/* Core Display: 2 Columns */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1.9fr', gap: '16px', marginBottom: '16px' }}>
+              {/* Left Column: Risk Gauge & State */}
               <div
                 style={{
-                  backgroundColor: '#131d35',
-                  borderRadius: '14px',
-                  padding: '24px',
-                  border: isAlertTriggered ? '2px solid #ef4444' : '1px solid #1e293b',
-                  boxShadow: isAlertTriggered ? '0 0 25px rgba(239, 68, 68, 0.35)' : 'none',
-                  transition: 'all 0.2s ease',
+                  backgroundColor: '#121826',
+                  borderRadius: '8px',
+                  padding: '20px',
+                  border: isAlertTriggered ? '1px solid #ef4444' : '1px solid #202b3e',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
                 }}
               >
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                    <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#f8fafc' }}>
-                      20-Second Future Onset Risk Gauge
-                    </h3>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#94a3b8' }}>
+                      20s Future Decrease Risk
+                    </div>
                     <span
                       style={{
-                        padding: '4px 10px',
-                        borderRadius: '12px',
+                        padding: '2px 8px',
+                        borderRadius: '3px',
                         fontSize: '11px',
-                        fontWeight: 'bold',
+                        fontWeight: '600',
                         backgroundColor:
                           currentPoint.trueState === 'ACTIVE'
                             ? '#064e3b'
@@ -468,40 +453,41 @@ export const App: React.FC = () => {
                             : '#fecaca',
                       }}
                     >
-                      CURRENT STATE: {currentPoint.trueState}
+                      {currentPoint.trueState}
                     </span>
                   </div>
 
-                  {/* Circular/Bar Risk Representation */}
-                  <div style={{ textAlign: 'center', margin: '20px 0' }}>
+                  {/* Minimal Numerical Metric */}
+                  <div style={{ textAlign: 'center', margin: '14px 0' }}>
                     <div
                       style={{
-                        fontSize: '56px',
-                        fontWeight: '800',
+                        fontSize: '48px',
+                        fontWeight: '700',
                         color:
                           forecastRisk < 0.25
                             ? '#10b981'
                             : forecastRisk < 0.60
                             ? '#f59e0b'
                             : '#ef4444',
-                        letterSpacing: '-0.03em',
+                        letterSpacing: '-0.02em',
                       }}
                     >
                       {(forecastRisk * 100).toFixed(1)}%
                     </div>
-                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#94a3b8', marginTop: '4px' }}>
-                      P(Participation Decrease Onset in Upcoming 20s)
+                    <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+                      P(Participation Decrease Onset in [t, t+20s])
                     </div>
 
-                    {/* Progress Bar */}
+                    {/* Flat Progress Bar */}
                     <div
                       style={{
-                        height: '10px',
-                        backgroundColor: '#0f172a',
-                        borderRadius: '5px',
-                        margin: '16px 0 8px 0',
+                        height: '6px',
+                        backgroundColor: '#0b0f17',
+                        borderRadius: '3px',
+                        margin: '14px 0 6px 0',
                         overflow: 'hidden',
                         position: 'relative',
+                        border: '1px solid #1e293b',
                       }}
                     >
                       <div
@@ -514,10 +500,10 @@ export const App: React.FC = () => {
                               : forecastRisk < 0.60
                               ? '#f59e0b'
                               : '#ef4444',
-                          transition: 'width 0.3s ease',
+                          transition: 'width 0.2s ease',
                         }}
                       />
-                      {/* Alert threshold marker */}
+                      {/* 30% Threshold Line */}
                       <div
                         style={{
                           position: 'absolute',
@@ -525,124 +511,129 @@ export const App: React.FC = () => {
                           top: 0,
                           bottom: 0,
                           width: '2px',
-                          backgroundColor: '#f8fafc',
-                          boxShadow: '0 0 4px #ffffff',
+                          backgroundColor: '#94a3b8',
                         }}
-                        title={`Operating Threshold: ${alertThreshold}`}
                       />
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#64748b' }}>
-                      <span>0% (Active)</span>
-                      <span style={{ color: '#38bdf8' }}>Operating Threshold (30%)</span>
-                      <span>100% (Imminent Onset)</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#64748b' }}>
+                      <span>0% (Nominal)</span>
+                      <span style={{ color: '#94a3b8' }}>Threshold (30%)</span>
+                      <span>100% (High Risk)</span>
                     </div>
                   </div>
 
-                  {/* Alert Advisory Banner */}
+                  {/* Clean Advisory Card */}
                   {forecastRisk >= alertThreshold ? (
                     <div
                       style={{
-                        backgroundColor: '#450a0a',
-                        border: '1px solid #dc2626',
-                        borderRadius: '10px',
-                        padding: '12px 16px',
-                        marginBottom: '12px',
+                        backgroundColor: '#1c131d',
+                        border: '1px solid #881337',
+                        borderRadius: '6px',
+                        padding: '10px 14px',
+                        marginBottom: '10px',
                       }}
                     >
-                      <div style={{ fontWeight: 'bold', color: '#fecaca', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span>⚠️ PROACTIVE EDUCATOR ADVISORY TRIGGERED</span>
+                      <div style={{ fontWeight: '600', color: '#fecaca', fontSize: '12px' }}>
+                        Advisory: Imminent Decrease Onset Forecasted
                       </div>
-                      <p style={{ fontSize: '12px', color: '#fca5a5', marginTop: '4px' }}>
-                        Model predicts probable decrease onset in [t, t+20s]. Suggested discreet verbal or visual scaffolding prompt.
+                      <p style={{ fontSize: '11px', color: '#fca5a5', marginTop: '3px', lineHeight: '1.4' }}>
+                        Response latency trend exceeds personal baseline bounds. Recommended subtle educator check-in.
                       </p>
                     </div>
                   ) : (
                     <div
                       style={{
-                        backgroundColor: '#022c22',
-                        border: '1px solid #059669',
-                        borderRadius: '10px',
-                        padding: '12px 16px',
-                        marginBottom: '12px',
+                        backgroundColor: '#0c1a1a',
+                        border: '1px solid #065f46',
+                        borderRadius: '6px',
+                        padding: '10px 14px',
+                        marginBottom: '10px',
                       }}
                     >
-                      <div style={{ fontWeight: 'bold', color: '#a7f3d0', fontSize: '13px' }}>
-                        ✓ NORMAL TASK FLOW
+                      <div style={{ fontWeight: '600', color: '#a7f3d0', fontSize: '12px' }}>
+                        Nominal Task Pacing
                       </div>
-                      <p style={{ fontSize: '12px', color: '#6ee7b7', marginTop: '4px' }}>
-                        Learner interaction pacing is within nominal expected bounds relative to personal baseline.
+                      <p style={{ fontSize: '11px', color: '#6ee7b7', marginTop: '3px', lineHeight: '1.4' }}>
+                        Learner interaction frequency and pauses are within normal individual bounds.
                       </p>
                     </div>
                   )}
 
-                  {/* Cooldown Suppression Counter */}
+                  {/* Cooldown Status */}
                   <div
                     style={{
-                      backgroundColor: '#0f172a',
-                      borderRadius: '8px',
-                      padding: '10px 14px',
-                      fontSize: '12px',
-                      color: isCooldownActive ? '#f59e0b' : '#94a3b8',
+                      backgroundColor: '#0b0f17',
+                      borderRadius: '4px',
+                      border: '1px solid #1e293b',
+                      padding: '8px 12px',
+                      fontSize: '11px',
+                      color: isCooldownActive ? '#f59e0b' : '#64748b',
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
                     }}
                   >
-                    <span>15s Alert Suppression Cooldown:</span>
-                    <b>{isCooldownActive ? `ACTIVE (${cooldownRemaining}s remaining)` : 'READY (No Fatigue)'}</b>
+                    <span>15s Alert Cooldown:</span>
+                    <b>{isCooldownActive ? `ACTIVE (${cooldownRemaining}s left)` : 'STANDBY'}</b>
                   </div>
                 </div>
 
-                {/* Non-Diagnostic Ethical Footer */}
+                {/* Non-Diagnostic Guardrail Note */}
                 <div
                   style={{
                     borderTop: '1px solid #1e293b',
-                    paddingTop: '12px',
-                    marginTop: '16px',
+                    paddingTop: '10px',
+                    marginTop: '14px',
                     fontSize: '11px',
                     color: '#64748b',
                     lineHeight: '1.4',
                   }}
                 >
-                  <b>Ethical Governance:</b> Non-punitive observable task metric. Pauses for processing and self-regulation (stimming, rocking) are never pathologized as disengagement.
+                  <b>Ethical Rule:</b> Measures observable task pacing only. Stimming and processing pauses are classified as valid participation or self-regulation.
                 </div>
               </div>
 
-              {/* Right Column: 30-Second Historical Window Telemetry */}
+              {/* Right Column: 30-Second Historical Sequence */}
               <div
                 style={{
-                  backgroundColor: '#131d35',
-                  borderRadius: '14px',
-                  padding: '24px',
-                  border: '1px solid #1e293b',
+                  backgroundColor: '#121826',
+                  borderRadius: '8px',
+                  padding: '20px',
+                  border: '1px solid #202b3e',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
                 }}
               >
                 <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#f8fafc', marginBottom: '6px' }}>
-                    30-Second Historical Sequence [t - 30s → t]
-                  </h3>
-                  <p style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '18px' }}>
-                    1 Hz feature bins entering Temporal Convolutional Network (Channels: Hit Pacing, Inactivity Duration)
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <h3 style={{ fontSize: '13px', fontWeight: '600', color: '#f1f5f9' }}>
+                      30-Second Observation History [t - 30s → t]
+                    </h3>
+                    <span style={{ fontSize: '11px', color: '#64748b' }}>
+                      1 Hz Binned Feature Sequence
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '11px', color: '#64748b', marginBottom: '14px' }}>
+                    Inputs fed to Temporal Convolutional Network (Interaction Pace & Inactivity Duration)
                   </p>
 
-                  {/* Pacing Visualizer Bars */}
+                  {/* Minimal Sparkline Bars */}
                   <div style={{ marginBottom: '16px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px', color: '#94a3b8' }}>
-                      <span>Interaction Pace (Hits/sec across last 30 bins)</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px', color: '#94a3b8' }}>
+                      <span>Interaction Pace (Hits/sec across 30 bins)</span>
                       <span>Current: <b>{currentPoint.pace.toFixed(2)}/s</b></span>
                     </div>
                     <div
                       style={{
                         display: 'flex',
                         alignItems: 'flex-end',
-                        gap: '3px',
-                        height: '65px',
-                        backgroundColor: '#0f172a',
-                        padding: '6px',
-                        borderRadius: '8px',
+                        gap: '2px',
+                        height: '56px',
+                        backgroundColor: '#0b0f17',
+                        padding: '4px',
+                        borderRadius: '4px',
+                        border: '1px solid #1e293b',
                       }}
                     >
                       {windowData.map((pt, i) => {
@@ -652,10 +643,9 @@ export const App: React.FC = () => {
                             key={i}
                             style={{
                               flex: 1,
-                              height: `${Math.max(8, h)}%`,
+                              height: `${Math.max(6, h)}%`,
                               backgroundColor: pt.pace < 0.3 ? '#ef4444' : pt.pace < 0.8 ? '#f59e0b' : '#3b82f6',
-                              borderRadius: '2px',
-                              transition: 'height 0.1s ease',
+                              borderRadius: '1px',
                             }}
                             title={`t=${pt.timeSec}s: Pace=${pt.pace}/s`}
                           />
@@ -664,76 +654,79 @@ export const App: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Metric Cards Grid */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '16px' }}>
-                    <div style={{ backgroundColor: '#0f172a', padding: '12px', borderRadius: '10px' }}>
-                      <div style={{ fontSize: '11px', color: '#94a3b8' }}>Response Latency</div>
-                      <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#f8fafc', marginTop: '2px' }}>
-                        {currentPoint.latencyMs} <span style={{ fontSize: '11px', color: '#64748b' }}>ms</span>
+                  {/* Summary Metric Cards */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '14px' }}>
+                    <div style={{ backgroundColor: '#0b0f17', padding: '10px', borderRadius: '6px', border: '1px solid #1e293b' }}>
+                      <div style={{ fontSize: '10px', color: '#64748b' }}>Response Latency</div>
+                      <div style={{ fontSize: '16px', fontWeight: '600', color: '#f1f5f9', marginTop: '2px' }}>
+                        {currentPoint.latencyMs} <span style={{ fontSize: '10px', color: '#64748b' }}>ms</span>
                       </div>
                       <div style={{ fontSize: '10px', color: currentPoint.latencyMs > 2500 ? '#ef4444' : '#10b981' }}>
-                        {currentPoint.latencyMs > 2500 ? '↑ High Hesitation' : '✓ Nominal Pacing'}
+                        {currentPoint.latencyMs > 2500 ? 'Delayed Pacing' : 'Normal Pacing'}
                       </div>
                     </div>
 
-                    <div style={{ backgroundColor: '#0f172a', padding: '12px', borderRadius: '10px' }}>
-                      <div style={{ fontSize: '11px', color: '#94a3b8' }}>Inactivity Duration</div>
-                      <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#f8fafc', marginTop: '2px' }}>
-                        {currentPoint.inactivitySec} <span style={{ fontSize: '11px', color: '#64748b' }}>sec</span>
+                    <div style={{ backgroundColor: '#0b0f17', padding: '10px', borderRadius: '6px', border: '1px solid #1e293b' }}>
+                      <div style={{ fontSize: '10px', color: '#64748b' }}>Inactivity Time</div>
+                      <div style={{ fontSize: '16px', fontWeight: '600', color: '#f1f5f9', marginTop: '2px' }}>
+                        {currentPoint.inactivitySec} <span style={{ fontSize: '10px', color: '#64748b' }}>s</span>
                       </div>
                       <div style={{ fontSize: '10px', color: currentPoint.inactivitySec > 4 ? '#ef4444' : '#10b981' }}>
-                        {currentPoint.inactivitySec > 4 ? '↑ Screen Idle' : '✓ Active Tap Flow'}
+                        {currentPoint.inactivitySec > 4 ? 'Pause Detected' : 'Active Flow'}
                       </div>
                     </div>
 
-                    <div style={{ backgroundColor: '#0f172a', padding: '12px', borderRadius: '10px' }}>
-                      <div style={{ fontSize: '11px', color: '#94a3b8' }}>Visual Validity Mask</div>
-                      <div style={{ fontSize: '18px', fontWeight: 'bold', color: cameraActive ? '#10b981' : '#f43f5e', marginTop: '2px' }}>
+                    <div style={{ backgroundColor: '#0b0f17', padding: '10px', borderRadius: '6px', border: '1px solid #1e293b' }}>
+                      <div style={{ fontSize: '10px', color: '#64748b' }}>Camera Mask</div>
+                      <div style={{ fontSize: '16px', fontWeight: '600', color: cameraActive ? '#10b981' : '#f43f5e', marginTop: '2px' }}>
                         {modelMode === 'modeB' ? 'N/A' : cameraActive ? '1 (Active)' : '0 (Masked)'}
                       </div>
                       <div style={{ fontSize: '10px', color: '#64748b' }}>
-                        {modelMode === 'modeB' ? 'Pure Interaction' : cameraActive ? 'Gaze Tracked' : 'Gate Fallback'}
+                        {modelMode === 'modeB' ? 'Pure Interaction' : cameraActive ? 'Gaze Valid' : 'Gate Fallback'}
                       </div>
                     </div>
                   </div>
 
-                  {/* Model Mode Details */}
+                  {/* Active Pipeline Description */}
                   <div
                     style={{
-                      backgroundColor: '#0f172a',
-                      borderRadius: '8px',
-                      padding: '12px 14px',
-                      fontSize: '12px',
-                      color: '#cbd5e1',
+                      backgroundColor: '#0b0f17',
+                      borderRadius: '6px',
+                      border: '1px solid #1e293b',
+                      padding: '10px 12px',
+                      fontSize: '11px',
+                      color: '#94a3b8',
                     }}
                   >
-                    <b>Active Inference Pipeline:</b>{' '}
+                    <b>Active Model:</b>{' '}
                     {modelMode === 'modeB' ? (
                       <span style={{ color: '#38bdf8' }}>
-                        Mode B (Pure Interaction Forecaster) — Hit Pacing + Pause Duration only. Zero camera or wearable dependence.
+                        Mode B (Pure Interaction Forecaster) — Hit Pacing + Pause Duration only. No wearable or camera dependency.
                       </span>
                     ) : (
                       <span style={{ color: '#c084fc' }}>
-                        Mode A (Multimodal TCN with Reliability Gate) — Dynamic visual gaze stream with automatic fallback.
+                        Mode A (Multimodal TCN) — 8 interaction + 3 visual channels with reliability gating.
                       </span>
                     )}
                   </div>
                 </div>
 
+                {/* Ground Truth Label Check */}
                 <div
                   style={{
-                    backgroundColor: '#1e293b',
-                    borderRadius: '8px',
-                    padding: '10px 14px',
-                    fontSize: '12px',
-                    color: '#94a3b8',
+                    backgroundColor: '#1a2234',
+                    borderRadius: '6px',
+                    border: '1px solid #2d3b55',
+                    padding: '8px 12px',
+                    fontSize: '11px',
                     display: 'flex',
                     justifyContent: 'space-between',
+                    marginTop: '12px',
                   }}
                 >
-                  <span>Ground Truth Episode in Target [t, t+20s]:</span>
+                  <span style={{ color: '#94a3b8' }}>Target Horizon Label [t → t+20s]:</span>
                   <b style={{ color: currentPoint.hasTrueOnset ? '#f87171' : '#34d399' }}>
-                    {currentPoint.hasTrueOnset ? 'YES (Decrease Onset Imminent)' : 'NO (Remains Engaged)'}
+                    {currentPoint.hasTrueOnset ? 'Decrease Onset Occurs' : 'Remains Engaged'}
                   </b>
                 </div>
               </div>
@@ -742,23 +735,23 @@ export const App: React.FC = () => {
         )}
 
         {/* =================================================================== */}
-        {/* TAB 2: EDUCATOR ANNOTATION SUITE (1436-line tool) */}
+        {/* TAB 2: EDUCATOR ANNOTATION SUITE */}
         {/* =================================================================== */}
         {activeTab === 'annotation' && (
           <div>
             <div
               style={{
-                backgroundColor: '#131d35',
-                padding: '16px 20px',
-                borderRadius: '12px',
+                backgroundColor: '#121826',
+                padding: '14px 18px',
+                borderRadius: '8px',
                 marginBottom: '16px',
-                border: '1px solid #1e293b',
+                border: '1px solid #202b3e',
               }}
             >
-              <h2 style={{ fontSize: '16px', fontWeight: 'bold', color: '#f8fafc' }}>
-                Special Educator Annotation & Timeline Synchronization Tool
+              <h2 style={{ fontSize: '14px', fontWeight: '600', color: '#f1f5f9' }}>
+                Educator Annotation & Timeline Synchronization Suite
               </h2>
-              <p style={{ fontSize: '12px', color: '#94a3b8' }}>
+              <p style={{ fontSize: '11px', color: '#64748b' }}>
                 Implemented in <code>app/src/annotation_tool.tsx</code>. Supports 5-second segmented coding, dual-annotator
                 Cohen's Kappa engine, event inspector, and observable behavioral criterion enforcement.
               </p>
@@ -775,23 +768,23 @@ export const App: React.FC = () => {
         {/* TAB 3: BENCHMARK & AUDIT */}
         {/* =================================================================== */}
         {activeTab === 'benchmark' && (
-          <div style={{ backgroundColor: '#131d35', borderRadius: '14px', padding: '24px', border: '1px solid #1e293b' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#f8fafc', marginBottom: '8px' }}>
+          <div style={{ backgroundColor: '#121826', borderRadius: '8px', padding: '20px', border: '1px solid #202b3e' }}>
+            <h2 style={{ fontSize: '15px', fontWeight: '600', color: '#f1f5f9', marginBottom: '4px' }}>
               Empirical Benchmark Results & Model Comparison
             </h2>
-            <p style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '20px' }}>
-              Evaluated strictly on 7 held-out clinical test participants from Engagnition (P40, P35, P28, P39, P42, P20, P26; 1,578 test windows):
+            <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '16px' }}>
+              Evaluated on 7 held-out clinical test participants from Engagnition (P40, P35, P28, P39, P42, P20, P26; 1,578 test windows):
             </p>
 
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
               <thead>
-                <tr style={{ backgroundColor: '#0f172a', borderBottom: '2px solid #334155', color: '#94a3b8' }}>
-                  <th style={{ padding: '10px 14px' }}>Model Configuration</th>
-                  <th style={{ padding: '10px 14px' }}>Input Modalities</th>
-                  <th style={{ padding: '10px 14px' }}>PR-AUC</th>
-                  <th style={{ padding: '10px 14px' }}>ROC-AUC</th>
-                  <th style={{ padding: '10px 14px' }}>Brier Score</th>
-                  <th style={{ padding: '10px 14px' }}>Status</th>
+                <tr style={{ backgroundColor: '#0b0f17', borderBottom: '1px solid #202b3e', color: '#64748b' }}>
+                  <th style={{ padding: '8px 12px' }}>Model Configuration</th>
+                  <th style={{ padding: '8px 12px' }}>Input Features</th>
+                  <th style={{ padding: '8px 12px' }}>PR-AUC</th>
+                  <th style={{ padding: '8px 12px' }}>ROC-AUC</th>
+                  <th style={{ padding: '8px 12px' }}>Brier Score</th>
+                  <th style={{ padding: '8px 12px' }}>Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -802,50 +795,50 @@ export const App: React.FC = () => {
                   { name: 'TCN Population Baseline', mod: 'Raw Sequences', pr: '0.0663', roc: '0.4565', brier: '0.1761', note: 'Overfits training participants' },
                   { name: 'TCN Personal Baseline', mod: 'Interaction + Motion', pr: '0.4709', roc: '0.9202', brier: '0.2524', note: 'High ranking, uncalibrated' },
                   { name: 'TCN Full Proposed (Gate + Dropout)', mod: 'Multimodal Gate', pr: '0.4233', roc: '0.9176', brier: '0.0586', note: 'Optimal balance, Brier < chance' },
-                  { name: 'TCN Camera-Masked Fallback', mod: 'Camera Disconnected', pr: '0.4273', roc: '0.9193', brier: '0.0544', note: 'Resilient: 0% performance loss' },
-                  { name: 'Mode B: Interaction-Only Forecaster', mod: 'Pacing + Inactivity Only', pr: '0.4751', roc: '0.9209', brier: '0.2074', note: 'Nearly 3x chance without cameras!' },
+                  { name: 'TCN Camera-Masked Fallback', mod: 'Camera Disconnected', pr: '0.4273', roc: '0.9193', brier: '0.0544', note: 'Resilient: 0% loss' },
+                  { name: 'Mode B: Interaction-Only Forecaster', mod: 'Pacing + Inactivity Only', pr: '0.4751', roc: '0.9209', brier: '0.2074', note: 'Nearly 3x chance without cameras' },
                 ].map((row, idx) => (
                   <tr
                     key={idx}
                     style={{
-                      borderBottom: '1px solid #1e293b',
-                      backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)',
+                      borderBottom: '1px solid #1a2234',
+                      backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)',
                     }}
                   >
-                    <td style={{ padding: '10px 14px', fontWeight: '600', color: '#f8fafc' }}>{row.name}</td>
-                    <td style={{ padding: '10px 14px', color: '#94a3b8' }}>{row.mod}</td>
-                    <td style={{ padding: '10px 14px', fontWeight: 'bold', color: parseFloat(row.pr) > 0.4 ? '#38bdf8' : '#cbd5e1' }}>{row.pr}</td>
-                    <td style={{ padding: '10px 14px', fontWeight: 'bold', color: parseFloat(row.roc) > 0.9 ? '#34d399' : '#cbd5e1' }}>{row.roc}</td>
-                    <td style={{ padding: '10px 14px', color: '#cbd5e1' }}>{row.brier}</td>
-                    <td style={{ padding: '10px 14px', fontSize: '12px', color: '#a5b4fc' }}>{row.note}</td>
+                    <td style={{ padding: '8px 12px', fontWeight: '500', color: '#f1f5f9' }}>{row.name}</td>
+                    <td style={{ padding: '8px 12px', color: '#94a3b8' }}>{row.mod}</td>
+                    <td style={{ padding: '8px 12px', fontWeight: '600', color: parseFloat(row.pr) > 0.4 ? '#38bdf8' : '#cbd5e1' }}>{row.pr}</td>
+                    <td style={{ padding: '8px 12px', fontWeight: '600', color: parseFloat(row.roc) > 0.9 ? '#34d399' : '#cbd5e1' }}>{row.roc}</td>
+                    <td style={{ padding: '8px 12px', color: '#cbd5e1' }}>{row.brier}</td>
+                    <td style={{ padding: '8px 12px', fontSize: '11px', color: '#a5b4fc' }}>{row.note}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
-            <div style={{ marginTop: '24px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-              <div style={{ backgroundColor: '#0f172a', padding: '16px', borderRadius: '10px' }}>
-                <div style={{ fontSize: '12px', color: '#94a3b8' }}>True Episodes Detected</div>
-                <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#34d399', marginTop: '4px' }}>
-                  9 / 11 <span style={{ fontSize: '14px', color: '#94a3b8' }}>(81.8%)</span>
+            <div style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+              <div style={{ backgroundColor: '#0b0f17', padding: '14px', borderRadius: '6px', border: '1px solid #1e293b' }}>
+                <div style={{ fontSize: '11px', color: '#64748b' }}>Episodes Detected</div>
+                <div style={{ fontSize: '22px', fontWeight: '700', color: '#34d399', marginTop: '2px' }}>
+                  9 / 11 <span style={{ fontSize: '12px', color: '#94a3b8' }}>(81.8%)</span>
                 </div>
-                <div style={{ fontSize: '11px', color: '#64748b' }}>95% Bootstrap CI: [54.5%, 100.0%]</div>
+                <div style={{ fontSize: '10px', color: '#64748b' }}>95% Bootstrap CI: [54.5%, 100.0%]</div>
               </div>
 
-              <div style={{ backgroundColor: '#0f172a', padding: '16px', borderRadius: '10px' }}>
-                <div style={{ fontSize: '12px', color: '#94a3b8' }}>Mean Usable Advance Lead Time</div>
-                <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#38bdf8', marginTop: '4px' }}>
-                  8.67 <span style={{ fontSize: '14px', color: '#94a3b8' }}>seconds</span>
+              <div style={{ backgroundColor: '#0b0f17', padding: '14px', borderRadius: '6px', border: '1px solid #1e293b' }}>
+                <div style={{ fontSize: '11px', color: '#64748b' }}>Mean Advance Lead Time</div>
+                <div style={{ fontSize: '22px', fontWeight: '700', color: '#38bdf8', marginTop: '2px' }}>
+                  8.67 <span style={{ fontSize: '12px', color: '#94a3b8' }}>seconds</span>
                 </div>
-                <div style={{ fontSize: '11px', color: '#64748b' }}>Median lead time: 9.00s</div>
+                <div style={{ fontSize: '10px', color: '#64748b' }}>Median: 9.00s before onset</div>
               </div>
 
-              <div style={{ backgroundColor: '#0f172a', padding: '16px', borderRadius: '10px' }}>
-                <div style={{ fontSize: '12px', color: '#94a3b8' }}>Alert Suppression Cooldown</div>
-                <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#c084fc', marginTop: '4px' }}>
-                  15 <span style={{ fontSize: '14px', color: '#94a3b8' }}>seconds</span>
+              <div style={{ backgroundColor: '#0b0f17', padding: '14px', borderRadius: '6px', border: '1px solid #1e293b' }}>
+                <div style={{ fontSize: '11px', color: '#64748b' }}>Alert Suppression Cooldown</div>
+                <div style={{ fontSize: '22px', fontWeight: '700', color: '#cbd5e1', marginTop: '2px' }}>
+                  15 <span style={{ fontSize: '12px', color: '#94a3b8' }}>seconds</span>
                 </div>
-                <div style={{ fontSize: '11px', color: '#64748b' }}>Prevents educator fatigue</div>
+                <div style={{ fontSize: '10px', color: '#64748b' }}>Prevents educator fatigue</div>
               </div>
             </div>
           </div>
@@ -855,31 +848,31 @@ export const App: React.FC = () => {
         {/* TAB 4: ETHICAL SAFEGUARDS */}
         {/* =================================================================== */}
         {activeTab === 'ethics' && (
-          <div style={{ backgroundColor: '#131d35', borderRadius: '14px', padding: '24px', border: '1px solid #1e293b' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#f8fafc', marginBottom: '8px' }}>
+          <div style={{ backgroundColor: '#121826', borderRadius: '8px', padding: '20px', border: '1px solid #202b3e' }}>
+            <h2 style={{ fontSize: '15px', fontWeight: '600', color: '#f1f5f9', marginBottom: '4px' }}>
               Component 3 Ethical Governance & Non-Diagnostic Guardrails
             </h2>
-            <p style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '20px' }}>
+            <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '16px' }}>
               Established in consultation with special educators and documented in <code>docs/OBSERVABLE_LABELS.md</code>:
             </p>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
-              <div style={{ backgroundColor: '#0f172a', padding: '18px', borderRadius: '10px', borderLeft: '4px solid #10b981' }}>
-                <h3 style={{ fontSize: '14px', fontWeight: 'bold', color: '#34d399', marginBottom: '6px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
+              <div style={{ backgroundColor: '#0b0f17', padding: '16px', borderRadius: '6px', borderLeft: '3px solid #10b981', border: '1px solid #1e293b' }}>
+                <h3 style={{ fontSize: '13px', fontWeight: '600', color: '#34d399', marginBottom: '6px' }}>
                   What the Model Forecasts
                 </h3>
-                <ul style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: '1.6', paddingLeft: '18px' }}>
-                  <li>Estimates the probability of a teacher-defined decrease in task interaction over the next 20 seconds.</li>
-                  <li>Tracks fine-grained response latency trends, screen inactivity duration, and prompt requests.</li>
-                  <li>Normalizes metrics strictly against each individual learner's personal calibration baseline.</li>
+                <ul style={{ fontSize: '12px', color: '#cbd5e1', lineHeight: '1.6', paddingLeft: '16px' }}>
+                  <li>Estimates probability of a teacher-defined decrease in task interaction over the next 20 seconds.</li>
+                  <li>Tracks response latency trends, screen inactivity duration, and prompt requests.</li>
+                  <li>Normalizes metrics strictly against each learner's personal calibration baseline.</li>
                 </ul>
               </div>
 
-              <div style={{ backgroundColor: '#0f172a', padding: '18px', borderRadius: '10px', borderLeft: '4px solid #ef4444' }}>
-                <h3 style={{ fontSize: '14px', fontWeight: 'bold', color: '#f87171', marginBottom: '6px' }}>
+              <div style={{ backgroundColor: '#0b0f17', padding: '16px', borderRadius: '6px', borderLeft: '3px solid #ef4444', border: '1px solid #1e293b' }}>
+                <h3 style={{ fontSize: '13px', fontWeight: '600', color: '#f87171', marginBottom: '6px' }}>
                   What the Model Strictly Avoids
                 </h3>
-                <ul style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: '1.6', paddingLeft: '18px' }}>
+                <ul style={{ fontSize: '12px', color: '#cbd5e1', lineHeight: '1.6', paddingLeft: '16px' }}>
                   <li><b>No Affective Inference:</b> Never predicts "boredom", "distress", or emotional dysregulation.</li>
                   <li><b>No Pathologizing of Self-Regulation:</b> Stimming, rhythmic tapping, and pauses for thought are valid behaviors.</li>
                   <li><b>No Automated Override:</b> Supplies a risk prediction only; never forces activity changes without teacher agency.</li>
