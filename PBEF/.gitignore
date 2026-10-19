@@ -78,3 +78,5 @@ yarn-error.log*
 app/dist/
 app/build/
 app/.next/
+.vite/
+app/.vite/
