@@ -1,0 +1,17 @@
+{
+  "model_name": "TemporalForecaster_InteractionOnly_ModeB",
+  "channels": [
+    "perf_counts",
+    "inactivity"
+  ],
+  "interaction_dim": 2,
+  "visual_dim": 0,
+  "pr_auc": 0.4751,
+  "roc_auc": 0.9209,
+  "brier_score": 0.2074,
+  "f1_score": 0.1435,
+  "precision": 0.0773,
+  "recall": 1.0,
+  "threshold": 0.05,
+  "test_prevalence": 0.0773
+}

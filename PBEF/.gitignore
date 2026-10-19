@@ -38,10 +38,13 @@ data/engagnition/*.npz
 data/engagnition/raw/
 data/engagnition/*.csv
 *.zip
+*.pdf
 
 # Heavy Model Checkpoints & Weights
 models/**/*.pt
 models/**/*.onnx
+models/**/*.onnx.data
+models/**/*.data
 models/**/*.pkl
 models/**/*.bin
 models/**/*.npy
