@@ -4,35 +4,38 @@
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* Minimal Neutral Palette */
-  --bg-app: #0b0f17;
-  --bg-surface: #121826;
-  --bg-surface-elevated: #1a2234;
-  --bg-subtle: #0f1523;
+  /* Clean Minimal White / Light Palette */
+  --bg-app: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-surface-elevated: #f1f5f9;
+  --bg-subtle: #f8fafc;
 
-  --border-light: #202b3e;
-  --border-medium: #2d3b55;
+  --border-light: #e2e8f0;
+  --border-medium: #cbd5e1;
   --border-focus: #3b82f6;
 
-  --text-main: #f1f5f9;
-  --text-muted: #94a3b8;
+  --text-main: #0f172a;
+  --text-muted: #475569;
   --text-subtle: #64748b;
 
-  /* Functional Status Colors (Flat, Non-Glowing) */
-  --status-active: #10b981;
-  --status-active-bg: #064e3b;
-  --status-active-text: #a7f3d0;
+  /* Functional Status Colors (Flat, Non-Glowing Light Mode) */
+  --status-active: #059669;
+  --status-active-bg: #ecfdf5;
+  --status-active-border: #a7f3d0;
+  --status-active-text: #065f46;
 
-  --status-regulating: #f59e0b;
-  --status-regulating-bg: #78350f;
-  --status-regulating-text: #fde68a;
+  --status-regulating: #d97706;
+  --status-regulating-bg: #fffbeb;
+  --status-regulating-border: #fde68a;
+  --status-regulating-text: #92400e;
 
-  --status-risk: #ef4444;
-  --status-risk-bg: #7f1d1d;
-  --status-risk-text: #fecaca;
+  --status-risk: #dc2626;
+  --status-risk-bg: #fef2f2;
+  --status-risk-border: #fecaca;
+  --status-risk-text: #991b1b;
 
-  --primary-btn: #2563eb;
-  --primary-btn-hover: #1d4ed8;
+  --primary-btn: #1e293b;
+  --primary-btn-hover: #0f172a;
 }
 
 * {
@@ -54,6 +57,7 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-sans);
   font-weight: 600;
   letter-spacing: -0.015em;
+  color: var(--text-main);
 }
 
 code, pre, .font-mono {
@@ -69,9 +73,9 @@ code, pre, .font-mono {
   background: var(--bg-app);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--border-light);
+  background: var(--border-medium);
   border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--border-medium);
+  background: var(--text-subtle);
 }
