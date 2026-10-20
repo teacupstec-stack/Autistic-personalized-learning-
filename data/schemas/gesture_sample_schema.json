@@ -1,0 +1,97 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PUSG-Fusion Gesture Sample Schema",
+  "description": "Standardized schema for recording intentional gesture samples in Component 1 (PUSG-Fusion).",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "sample_id",
+    "participant_id",
+    "session_id",
+    "activity_id",
+    "confirmed_intent",
+    "collection_source",
+    "timestamps",
+    "landmarks",
+    "handedness",
+    "tracking_validity_masks",
+    "sampling_rate_hz",
+    "num_frames"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": ["1.0.0"]
+    },
+    "sample_id": {
+      "type": "string",
+      "description": "Unique identifier for this recording sample."
+    },
+    "participant_id": {
+      "type": "string",
+      "description": "Pseudonymous participant code (e.g., P001, P002)."
+    },
+    "session_id": {
+      "type": "string",
+      "description": "Unique identifier for the session."
+    },
+    "activity_id": {
+      "type": "string",
+      "description": "Contextual activity during recording (e.g., counting_activity_01)."
+    },
+    "confirmed_intent": {
+      "type": "string",
+      "enum": ["Help", "Break", "Finished", "Yes", "No"],
+      "description": "Agreed intentional communication label."
+    },
+    "collection_source": {
+      "type": "string",
+      "enum": [
+        "development_enrolment",
+        "development_test",
+        "synthetic_pipeline_validation"
+      ],
+      "description": "Provenance of sample."
+    },
+    "selected_symbol_ids": {
+      "type": ["array", "null"],
+      "items": { "type": "string" },
+      "description": "Any directly co-selected picture symbol IDs."
+    },
+    "num_frames": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Number of temporal time steps (standardized to 32)."
+    },
+    "sampling_rate_hz": {
+      "type": "number",
+      "description": "Nominal or effective sampling rate in Hertz."
+    },
+    "timestamps": {
+      "type": "array",
+      "items": { "type": "number" },
+      "description": "Relative timestamps in milliseconds from capture start."
+    },
+    "landmarks": {
+      "type": "array",
+      "description": "Nested 4D array: [frames, 2 hand_slots, 21 landmarks, 3 coordinates (x, y, z)]."
+    },
+    "handedness": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["Left", "Right", "Absent"] },
+      "description": "Handedness labels for hand slot 0 and hand slot 1."
+    },
+    "tracking_validity_masks": {
+      "type": "array",
+      "description": "Binary tracking mask: [frames, 2 hand_slots], 1 = valid tracking, 0 = absent/occluded."
+    },
+    "context_state": {
+      "type": "object",
+      "properties": {
+        "current_count": { "type": "integer" },
+        "target_count": { "type": "integer" },
+        "status": { "type": "string" }
+      }
+    }
+  }
+}

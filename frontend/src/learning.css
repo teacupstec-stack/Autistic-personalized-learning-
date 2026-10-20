@@ -1,0 +1,54 @@
+body { background: #f4f7f2; background-image: none; color: #263e3a; }
+.app-container { max-width: 1200px; padding: 32px 24px; gap: 28px; }
+.learning-header { display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+.learning-mark { color: #47776a; font-size: 14px; font-weight: 700; letter-spacing: .08em; }
+.learning-header h1 { font-size: clamp(28px, 4vw, 42px); margin: 8px 0; line-height: 1.2; }
+.learning-header p { color: #526b64; }
+.learning-header .btn { background: white; color: #36584e; border-color: #bacdc2; }
+.learner-space { --text-primary: #263e3a; --text-secondary: #526b64; --text-muted: #526b64; --border-subtle: #c6d7cb; display: grid; gap: 24px; }
+.learner-space .glass-panel { background: white; border: 1px solid #d6e1d8; box-shadow: 0 4px 18px #263e3a06; border-radius: 24px; padding: 28px; }
+.activity-picker { display: flex; gap: 12px; flex-wrap: wrap; }
+.activity-choice { min-height: 56px; border: 2px solid #c4d6c8; background: white; color: #36584e; border-radius: 16px; padding: 14px 24px; font: inherit; font-weight: 600; cursor: pointer; }
+.activity-choice.selected { background: #dcece0; border-color: #46775a; }
+.learning-communication { display: grid; grid-template-columns: 1.35fr 1fr; gap: 24px; align-items: start; }
+.learner-space .panel-header { flex-wrap: wrap; gap: 12px; }
+.learner-space h2 { font-size: 23px; margin-bottom: 10px; }
+.learner-space p { margin: 10px 0; }
+.learner-space .btn { min-height: 48px; font-size: 16px; }
+.learner-space .btn-primary { background: #376e57; color: white; border-color: #376e57; }
+.learner-space .btn-secondary { background: #f0f5ef; color: #36584e; border-color: #bdcfc1; }
+.learner-space .btn:disabled { opacity: .55; cursor: not-allowed; }
+.learner-space .counting-scene { background: #f7f6eb; padding: 28px; border: 1px solid #e5e5cf; gap: 24px; }
+.learner-space .star-item { width: 80px; height: 80px; border-radius: 22px; }
+.learner-space .star-uncounted { color: #95621b; background: #fff0c3; }
+.learner-space .star-counted { color: #276447; background: #d5e9d4; }
+.learner-space .status-chip { color: #36584e !important; background: #e5efe6 !important; }
+.learner-space .symbol-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.learner-space .symbol-card { min-height: 120px; border-width: 2px; background: #f0f5ee !important; color: #305640 !important; border-color: #b2cbb8 !important; }
+.learner-space .symbol-card:nth-child(2) { background: #fff1dc !important; color: #785115 !important; border-color: #d6be97 !important; }
+.learner-space .symbol-card:nth-child(5) { background: #f9e9e5 !important; color: #883e34 !important; border-color: #d9b1a8 !important; }
+.learner-space .symbol-card svg { color: inherit; }
+.learner-space .symbol-shortcut { display: none; }
+.learner-space .confirmed-alert { color: #285b40 !important; background: #e5f2e5 !important; animation: none; }
+.learner-space .symbol-card:hover { transform: none; box-shadow: 0 0 0 3px #b2cbb84d; }
+.learner-space video { margin-top: 14px; max-height: 190px !important; object-fit: contain; }
+.camera-indicator { display: block; font-size: 14px; color: #36584e; margin: 8px 0; }
+.learner-space progress { width: 100%; margin-top: 16px; accent-color: #376e57; }
+.learning-footer { display: flex; gap: 8px; align-items: center; justify-content: center; flex-wrap: wrap; color: #526b64; font-size: 14px; }
+.teacher-tools { background: #0f172a; color: #f8fafc; border-radius: 24px; padding: 28px; }
+.teacher-tools:not([hidden]) { display: grid; gap: 24px; }
+.teacher-tools .panel-header { flex-wrap: wrap; gap: 16px; }
+.teacher-tools input { color: #f8fafc; background: #1e293b; border: 1px solid #64748b; padding: 12px; border-radius: 8px; margin: 8px; }
+.teacher-tools p { margin: 12px 0; }
+.modal-content { max-height: 90dvh; overflow-y: auto; }
+@media (max-width: 760px) {
+  .app-container { padding: 20px 14px; }
+  .learning-header { align-items: flex-start; flex-direction: column; gap: 16px; }
+  .learning-communication { grid-template-columns: 1fr; }
+  .learner-space .glass-panel { padding: 20px; }
+  .learner-space .star-item { width: 52px; height: 64px; }
+  .learner-space .counting-scene { padding: 16px 8px; }
+  .learner-space .counting-items-row { gap: 6px; flex-wrap: wrap; }
+  .learner-space .symbol-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .teacher-tools { padding: 16px; }
+}
