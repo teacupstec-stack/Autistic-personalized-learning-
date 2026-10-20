@@ -1,0 +1,8 @@
+{
+  "model_name": "TemporalForecaster_InteractionOnly_ModeB",
+  "interaction_dim": 2,
+  "visual_dim": 0,
+  "conv_channels": 32,
+  "history_seconds": 30,
+  "forecast_seconds": 20
+}

@@ -15,6 +15,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.so
+*.wasm
 .pytest_cache/
 .coverage
 htmlcov/
@@ -77,6 +78,8 @@ yarn-debug.log*
 yarn-error.log*
 app/dist/
 app/build/
-app/.next/
-.vite/
 app/.vite/
+
+# Private Presentation Guide (Do not push)
+DEMO_PRESENTATION_SCRIPT.md
+docs/DEMO_PRESENTATION_SCRIPT.md

@@ -7,5 +7,12 @@ export default defineConfig({
     port: 5173,
     open: false,
     host: true,
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'credentialless',
+    },
+  },
+  optimizeDeps: {
+    exclude: ['onnxruntime-web'],
   },
 });

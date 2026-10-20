@@ -45,6 +45,7 @@ export interface AnnotationToolProps {
   interventions?: InterventionEvent[];
   initialAnnotatorId?: string;
   onSaveAnnotations?: (annotations: AnnotationRecord[]) => void;
+  onRunInForecaster?: (annotations: AnnotationRecord[]) => void;
 }
 
 const LABEL_COLORS: Record<StateLabel, { bg: string; border: string; text: string; badge: string }> = {
@@ -82,6 +83,7 @@ export const ParticipationAnnotationTool: React.FC<AnnotationToolProps> = ({
   interventions: initialInterventions = [],
   initialAnnotatorId = 'ANN_01',
   onSaveAnnotations,
+  onRunInForecaster,
 }) => {
   // Session Configuration State
   const [sessionId, setSessionId] = useState<string>(initialSessionId);
@@ -695,6 +697,37 @@ export const ParticipationAnnotationTool: React.FC<AnnotationToolProps> = ({
           >
             Export Annotations CSV
           </button>
+
+          {/* Direct Pipeline to Tab 1 Forecaster */}
+          {onRunInForecaster && (
+            <button
+              onClick={() => {
+                if (annotations.length === 0) {
+                  showStatus('Annotate at least one window before running forecaster.');
+                  return;
+                }
+                onRunInForecaster(annotations);
+              }}
+              style={{
+                background: '#047857',
+                color: '#fff',
+                border: 'none',
+                padding: '7px 16px',
+                borderRadius: '6px',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 4px 12px rgba(4, 120, 87, 0.3)',
+              }}
+              title="Transfer current annotations into Tab 1 Live Forecaster and jump to Tab 1"
+            >
+              <span>▶</span>
+              <span>Run in Live Forecaster (Tab 1)</span>
+            </button>
+          )}
         </div>
       </header>
 

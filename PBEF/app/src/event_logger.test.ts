@@ -96,6 +96,28 @@ async function runTests() {
     assert(flushedSnapshots[1].length === 2, 'Snapshot 2 has 2 events');
   }
 
+  // Test 4: Answer Selection and Explicit Pause Logging
+  {
+    const logger = new SessionEventLogger({
+      learner_id: 'L001',
+      session_id: 'S_TEST',
+      activity_id: 'act_01',
+    });
+
+    logger.startSession();
+    const sel = logger.logAnswerSelected('q1', 'opt_c');
+    assert(sel.event_type === 'answer_selected', 'Selection records answer_selected event');
+    assert(sel.metadata?.selected_option_id === 'opt_c', 'Option ID preserved in metadata');
+
+    const pauseEvt = logger.logExplicitPause('pause');
+    assert(pauseEvt.event_type === 'idle_pause', 'Explicit pause records idle_pause');
+    assert(pauseEvt.metadata?.pause_action === 'pause', 'Pause action preserved');
+
+    const resumeEvt = logger.logExplicitPause('resume');
+    assert(resumeEvt.event_type === 'idle_pause', 'Resume records idle_pause');
+    assert(resumeEvt.metadata?.pause_action === 'resume', 'Resume action preserved');
+  }
+
   console.log('--- All SessionEventLogger Unit Tests Passed! ---');
 }
 

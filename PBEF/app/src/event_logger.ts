@@ -22,6 +22,7 @@ export type EventType =
   | 'activity_start'
   | 'activity_end'
   | 'stimulus_presented'
+  | 'answer_selected'
   | 'touch_down'
   | 'touch_up'
   | 'response'
@@ -77,6 +78,7 @@ export class SessionEventLogger {
   private onFlush?: (events: InteractionEvent[]) => Promise<void> | void;
   private flushMode: 'incremental' | 'snapshot';
   private lastFlushedIndex = 0;
+  private pauseStartTime: number | null = null;
 
   constructor(config: SessionConfig) {
     this.learnerId = config.learner_id;
@@ -180,6 +182,35 @@ export class SessionEventLogger {
       pause_before_action_ms: null,
       visual_features: null,
       metadata: { stimulus_id: this.currentStimulusId },
+    };
+
+    this.events.push(event);
+    return event;
+  }
+
+  /**
+   * Logs option selection prior to submission.
+   */
+  public logAnswerSelected(questionId: string, optionId: string): InteractionEvent {
+    const elapsed = this.getElapsedSessionMs();
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    const pause = this.lastActionTime !== null ? Math.round(now - this.lastActionTime) : null;
+    this.lastActionTime = now;
+
+    const event: InteractionEvent = {
+      learner_id: this.learnerId,
+      session_id: this.sessionId,
+      time_ms: elapsed,
+      event_type: 'answer_selected',
+      activity_id: this.currentActivityId,
+      response_latency_ms: null,
+      prompt_count: this.promptCount,
+      accuracy: null,
+      touch_x: null,
+      touch_y: null,
+      pause_before_action_ms: pause,
+      visual_features: null,
+      metadata: { question_id: questionId, selected_option_id: optionId },
     };
 
     this.events.push(event);
@@ -294,6 +325,42 @@ export class SessionEventLogger {
       pause_before_action_ms: null,
       visual_features: null,
       metadata: promptType ? { prompt_type: promptType } : undefined,
+    };
+
+    this.events.push(event);
+    return event;
+  }
+
+  /**
+   * Logs an explicit student pause or resumption ("I'm thinking").
+   */
+  public logExplicitPause(action: 'pause' | 'resume'): InteractionEvent {
+    const elapsed = this.getElapsedSessionMs();
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+
+    let pauseDurationMs: number | null = null;
+    if (action === 'pause') {
+      this.pauseStartTime = now;
+    } else if (action === 'resume' && this.pauseStartTime !== null) {
+      pauseDurationMs = Math.max(0, Math.round(now - this.pauseStartTime));
+      this.pauseStartTime = null;
+    }
+    this.lastActionTime = now;
+
+    const event: InteractionEvent = {
+      learner_id: this.learnerId,
+      session_id: this.sessionId,
+      time_ms: elapsed,
+      event_type: 'idle_pause',
+      activity_id: this.currentActivityId,
+      response_latency_ms: null,
+      prompt_count: this.promptCount,
+      accuracy: null,
+      touch_x: null,
+      touch_y: null,
+      pause_before_action_ms: pauseDurationMs,
+      visual_features: null,
+      metadata: { pause_action: action, pause_duration_ms: pauseDurationMs ?? 0 },
     };
 
     this.events.push(event);

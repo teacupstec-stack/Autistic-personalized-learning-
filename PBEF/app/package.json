@@ -10,9 +10,10 @@
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
     "demo-logger": "tsx src/demo_logger.ts",
-    "test": "tsx src/event_logger.test.ts"
+    "test": "tsx src/tests/run_all.ts"
   },
   "dependencies": {
+    "onnxruntime-web": "^1.30.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
