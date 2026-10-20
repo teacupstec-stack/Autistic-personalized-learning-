@@ -89,10 +89,13 @@ def main():
     val_loader = DataLoader(val_ds, batch_size=32, shuffle=False)
     test_loader = DataLoader(test_ds, batch_size=32, shuffle=False)
 
-    model = TemporalForecaster(interaction_dim=2, visual_dim=0, num_classes=3, conv_channels=32, use_gate=False)
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"[Device] Training on: {device}" + (f" ({torch.cuda.get_device_name(0)})" if torch.cuda.is_available() else " (CPU mode)"))
+
+    model = TemporalForecaster(interaction_dim=2, visual_dim=0, num_classes=3, conv_channels=32, use_gate=False).to(device)
 
     p_tr = float(np.mean(y_forecast[train_mask]))
-    pos_w = torch.tensor([(1.0 - p_tr) / max(p_tr, 1e-4)])
+    pos_w = torch.tensor([(1.0 - p_tr) / max(p_tr, 1e-4)]).to(device)
 
     crit_f = nn.BCEWithLogitsLoss(pos_weight=pos_w)
     crit_s = nn.CrossEntropyLoss()
@@ -100,23 +103,39 @@ def main():
 
     best_val_auc = -1.0
     best_weights = None
+    training_history = []
 
-    for epoch in range(25):
+    for epoch in range(1, 26):
         model.train()
+        train_loss = 0.0
         for xb, yfb, ysb in train_loader:
+            xb, yfb, ysb = xb.to(device), yfb.to(device), ysb.to(device)
             optimizer.zero_grad()
             out_f, out_s = model(xb)
             loss = crit_f(out_f, yfb) + 0.3 * crit_s(out_s, ysb)
             loss.backward()
             optimizer.step()
+            train_loss += loss.item()
+
+        avg_loss = train_loss / max(1, len(train_loader))
 
         model.eval()
         v_preds = []
         with torch.no_grad():
             for xb, _, _ in val_loader:
+                xb = xb.to(device)
                 out_f, _ = model(xb)
                 v_preds.extend(torch.sigmoid(out_f).cpu().numpy().flatten())
         auc = average_precision_score(y_forecast[val_mask], v_preds) if len(np.unique(y_forecast[val_mask])) > 1 else 0.0
+        roc = roc_auc_score(y_forecast[val_mask], v_preds) if len(np.unique(y_forecast[val_mask])) > 1 else 0.5
+
+        training_history.append({
+            'epoch': epoch,
+            'train_loss': round(float(avg_loss), 4),
+            'val_pr_auc': round(float(auc), 4),
+            'val_roc_auc': round(float(roc), 4)
+        })
+
         if auc > best_val_auc:
             best_val_auc = auc
             best_weights = copy.deepcopy(model.state_dict())
@@ -129,6 +148,7 @@ def main():
     v_preds_final = []
     with torch.no_grad():
         for xb, _, _ in val_loader:
+            xb = xb.to(device)
             out_f, _ = model(xb)
             v_preds_final.extend(torch.sigmoid(out_f).cpu().numpy().flatten())
     best_thresh = find_best_threshold(y_forecast[val_mask], np.array(v_preds_final))
@@ -137,6 +157,7 @@ def main():
     te_preds = []
     with torch.no_grad():
         for xb, _, _ in test_loader:
+            xb = xb.to(device)
             out_f, _ = model(xb)
             te_preds.extend(torch.sigmoid(out_f).cpu().numpy().flatten())
     te_preds = np.array(te_preds)
@@ -169,6 +190,9 @@ def main():
     torch.save(model.state_dict(), pt_path)
     with open(os.path.join(output_dir, "metrics.json"), "w") as f:
         json.dump(metrics, f, indent=2)
+    with open(os.path.join(output_dir, "training_history.json"), "w") as f:
+        json.dump(training_history, f, indent=2)
+    pd.DataFrame(training_history).to_csv(os.path.join(output_dir, "training_history.csv"), index=False)
     with open(os.path.join(output_dir, "config.json"), "w") as f:
         json.dump({
             'model_name': 'TemporalForecaster_InteractionOnly_ModeB',
@@ -181,9 +205,10 @@ def main():
 
     # Export to ONNX
     onnx_path = os.path.join(output_dir, "model.onnx")
+    model_cpu = copy.deepcopy(model).cpu()
     dummy_input = torch.randn(1, 2, 30, dtype=torch.float32)
     torch.onnx.export(
-        model,
+        model_cpu,
         dummy_input,
         onnx_path,
         export_params=True,

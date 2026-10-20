@@ -110,9 +110,12 @@ def train_eval_tcn_variant(
     val_loader = DataLoader(val_ds, batch_size=32, shuffle=False)
     test_loader = DataLoader(test_ds, batch_size=32, shuffle=False)
 
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = model.to(device)
+
     # Dynamic pos_weight based on train prevalence
     p_train = float(np.mean(train_yf))
-    pos_w = torch.tensor([(1.0 - p_train) / max(p_train, 1e-4)])
+    pos_w = torch.tensor([(1.0 - p_train) / max(p_train, 1e-4)]).to(device)
 
     criterion_f = nn.BCEWithLogitsLoss(pos_weight=pos_w)
     criterion_s = nn.CrossEntropyLoss()
@@ -124,6 +127,7 @@ def train_eval_tcn_variant(
     for epoch in range(1, epochs + 1):
         model.train()
         for xb, yfb, ysb in train_loader:
+            xb, yfb, ysb = xb.to(device), yfb.to(device), ysb.to(device)
             # Modality dropout: randomly zero visual channels (8..10)
             if use_modality_dropout and torch.rand(1).item() < 0.3:
                 xb = xb.clone()
@@ -140,6 +144,7 @@ def train_eval_tcn_variant(
         val_preds = []
         with torch.no_grad():
             for xb, _, _ in val_loader:
+                xb = xb.to(device)
                 out_f, _ = model(xb)
                 val_preds.extend(torch.sigmoid(out_f).cpu().numpy().flatten())
         val_auc = average_precision_score(val_yf, val_preds) if len(np.unique(val_yf)) > 1 else 0.0
@@ -155,6 +160,7 @@ def train_eval_tcn_variant(
     val_preds_final = []
     with torch.no_grad():
         for xb, _, _ in val_loader:
+            xb = xb.to(device)
             out_f, _ = model(xb)
             val_preds_final.extend(torch.sigmoid(out_f).cpu().numpy().flatten())
     best_thresh = find_best_threshold(val_yf, np.array(val_preds_final))
@@ -163,6 +169,7 @@ def train_eval_tcn_variant(
     test_preds_final = []
     with torch.no_grad():
         for xb, _, _ in test_loader:
+            xb = xb.to(device)
             out_f, _ = model(xb)
             test_preds_final.extend(torch.sigmoid(out_f).cpu().numpy().flatten())
     test_preds_final = np.array(test_preds_final)

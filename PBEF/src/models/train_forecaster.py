@@ -165,6 +165,7 @@ def train_model(
     best_val_pr_auc = -1.0
     best_weights = None
     best_metrics = {}
+    history = []
 
     for epoch in range(1, epochs + 1):
         model.train()
@@ -183,6 +184,8 @@ def train_model(
             loss.backward()
             optimizer.step()
             train_loss += loss.item()
+
+        avg_train_loss = train_loss / max(1, len(train_loader))
 
         # Validation phase
         model.eval()
@@ -206,6 +209,13 @@ def train_model(
             val_pr_auc = 0.0
             val_roc_auc = 0.5
 
+        history.append({
+            'epoch': epoch,
+            'train_loss': round(float(avg_train_loss), 4),
+            'val_pr_auc': round(float(val_pr_auc), 4),
+            'val_roc_auc': round(float(val_roc_auc), 4)
+        })
+
         if val_pr_auc > best_val_pr_auc:
             import copy
             best_val_pr_auc = val_pr_auc
@@ -223,7 +233,7 @@ def train_model(
     if best_weights:
         model.load_state_dict(best_weights)
 
-    return model, best_metrics
+    return model, best_metrics, history
 
 
 def main():
@@ -285,7 +295,7 @@ def main():
 
     model = TemporalForecaster(interaction_dim=8, visual_dim=3, num_classes=3, conv_channels=32)
 
-    trained_model, best_metrics = train_model(
+    trained_model, best_metrics, history = train_model(
         model,
         train_loader,
         val_loader,
@@ -312,6 +322,11 @@ def main():
 
     with open(os.path.join(args.output_dir, "metrics.json"), 'w') as f:
         json.dump(best_metrics, f, indent=2)
+
+    with open(os.path.join(args.output_dir, "training_history.json"), 'w') as f:
+        json.dump(history, f, indent=2)
+
+    pd.DataFrame(history).to_csv(os.path.join(args.output_dir, "training_history.csv"), index=False)
 
     # Save full inference probabilities for event evaluation
     trained_model.eval()
