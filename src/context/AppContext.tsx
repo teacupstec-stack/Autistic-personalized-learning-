@@ -54,6 +54,7 @@ interface AppContextValue {
   requestBreak: () => void;
   resumeFromBreak: () => void;
   unlockTripwire: (customMaxFailure?: number) => void;
+  nextTask: () => void;
 
   // C3 signal simulation
   c3State: {
@@ -216,16 +217,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     syncStateFromSession();
 
-    if (res.tripwireTriggered) {
-      setRoute('safety');
-    }
-
     return res;
   }, [session, syncStateFromSession]);
 
-  const clearFeedback = useCallback(() => {
+  const nextTask = useCallback(() => {
     setLastFeedback(null);
-  }, []);
+    session.nextTask();
+    syncStateFromSession();
+  }, [session, syncStateFromSession]);
+
+  const clearFeedback = useCallback(() => {
+    nextTask();
+  }, [nextTask]);
 
   const toggleSimulatedMode = useCallback(() => {
     setIsSimulatedMode(prev => !prev);
@@ -282,6 +285,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       requestBreak,
       resumeFromBreak,
       unlockTripwire,
+      nextTask,
       c3State,
       setMockC3
     }),
@@ -318,6 +322,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       requestBreak,
       resumeFromBreak,
       unlockTripwire,
+      nextTask,
       c3State,
       setMockC3
     ]

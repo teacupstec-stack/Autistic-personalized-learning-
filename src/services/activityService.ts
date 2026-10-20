@@ -22,7 +22,13 @@ export const VISUAL_ITEMS: Record<string, VisualItemInfo> = {
   puppy: { icon: '🐶', name: 'Puppies', color: '#8B5CF6', bgLight: '#F5F3FF' },
   sun: { icon: '☀️', name: 'Suns', color: '#F59E0B', bgLight: '#FFFBEB' },
   shoe: { icon: '👟', name: 'Shoes', color: '#EF4444', bgLight: '#FEF2F2' },
-  kitten: { icon: '🐱', name: 'Kittens', color: '#6366F1', bgLight: '#EEF2FF' }
+  kitten: { icon: '🐱', name: 'Kittens', color: '#6366F1', bgLight: '#EEF2FF' },
+  butterfly: { icon: '🦋', name: 'Butterflies', color: '#8B5CF6', bgLight: '#F5F3FF' },
+  duck: { icon: '🦆', name: 'Ducks', color: '#F59E0B', bgLight: '#FEFCE8' },
+  flower: { icon: '🌸', name: 'Flowers', color: '#EC4899', bgLight: '#FDF2F8' },
+  car: { icon: '🚗', name: 'Toy Cars', color: '#EF4444', bgLight: '#FEF2F2' },
+  strawberry: { icon: '🍓', name: 'Strawberries', color: '#EF4444', bgLight: '#FEF2F2' },
+  turtle: { icon: '🐢', name: 'Turtles', color: '#10B981', bgLight: '#ECFDF5' }
 };
 
 export function getVisualItemInfo(activity: Activity): VisualItemInfo {

@@ -12,7 +12,8 @@ import {
   VolumeX,
   HelpCircle,
   ThumbsUp,
-  Heart
+  Heart,
+  Trophy
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Button } from '../../components/common/Button';
@@ -29,6 +30,8 @@ export const LearnerSessionScreen: React.FC = () => {
     requestHint,
     requestBreak,
     startSession,
+    endSession,
+    history,
     lastFeedback,
     clearFeedback,
     setRoute
@@ -134,6 +137,68 @@ export const LearnerSessionScreen: React.FC = () => {
     );
   }
 
+  // If session is completed
+  if (status === 'completed') {
+    const totalDone = history.length;
+    const correctCount = history.filter(h => h.outcomeEvent?.outcome).length;
+    return (
+      <div className="max-w-xl mx-auto py-12 px-4 text-center space-y-6 animate-scale-in">
+        <div className="w-24 h-24 bg-amber-100 rounded-3xl mx-auto flex items-center justify-center text-5xl shadow-md animate-bounce">
+          🏆
+        </div>
+        <div>
+          <span className="text-xs font-bold uppercase tracking-wider text-amber-700 bg-amber-100 px-3.5 py-1 rounded-full">
+            Session Completed!
+          </span>
+          <h2 className="text-3xl font-extrabold text-slate-900 mt-3 font-learner">
+            Incredible Work, {learner.name.split(' ')[0]}! 🌟
+          </h2>
+          <p className="text-sm text-slate-600 mt-2 font-learner max-w-md mx-auto">
+            You completed today's counting session! Your stars and achievements have been safely recorded.
+          </p>
+        </div>
+
+        {/* Stats Summary */}
+        <div className="bg-white rounded-3xl border-2 border-emerald-200 p-6 grid grid-cols-3 gap-4 shadow-sm">
+          <div>
+            <span className="text-2xl font-extrabold text-emerald-600 block">{totalDone}</span>
+            <span className="text-xs text-slate-500 font-medium">Tasks Solved</span>
+          </div>
+          <div>
+            <span className="text-2xl font-extrabold text-amber-600 block">{correctCount}</span>
+            <span className="text-xs text-slate-500 font-medium">Correct Counts</span>
+          </div>
+          <div>
+            <span className="text-2xl font-extrabold text-purple-600 block">
+              {Math.round(learner.current_skill * 100)}%
+            </span>
+            <span className="text-xs text-slate-500 font-medium">Skill Mastery</span>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+          <Button
+            variant="primary"
+            size="xl"
+            icon={<Play className="w-5 h-5" />}
+            onClick={startSession}
+            className="w-full sm:w-auto font-bold shadow-md hover:scale-105 transition-transform"
+          >
+            Start New Practice! 🚀
+          </Button>
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={() => setRoute('overview')}
+            className="w-full sm:w-auto font-bold"
+          >
+            Back to Home 🏠
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   // If no activity is loaded (e.g. tripwire hit)
   if (!currentActivity) {
     return (
@@ -212,6 +277,20 @@ export const LearnerSessionScreen: React.FC = () => {
           >
             I Need a Break
           </Button>
+
+          {/* Optional Finish Session Button after at least 3 tasks */}
+          {stepCount >= 3 && (
+            <Button
+              variant="outline"
+              size="lg"
+              icon={<Trophy className="w-4 h-4 text-amber-500" />}
+              onClick={endSession}
+              aria-label="Finish practice session"
+              className="font-bold text-slate-700 hover:text-amber-800 hover:border-amber-300 shadow-2xs"
+            >
+              Finish ⭐
+            </Button>
+          )}
         </div>
       </div>
 

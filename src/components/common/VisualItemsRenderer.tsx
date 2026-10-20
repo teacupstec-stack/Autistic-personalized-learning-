@@ -95,6 +95,42 @@ export const VisualItemsRenderer: React.FC<VisualItemsRendererProps> = ({
         itemFilter: 'drop-shadow(0 4px 8px rgba(236, 72, 153, 0.3))'
       };
     }
+    if (title.includes('frog')) {
+      return {
+        bg: 'bg-gradient-to-b from-emerald-100 via-teal-50 to-emerald-200',
+        border: 'border-emerald-300',
+        ground: 'text-emerald-950',
+        sky: '🌿 🪷 🌿',
+        itemFilter: 'drop-shadow(0 4px 6px rgba(16, 185, 129, 0.3))'
+      };
+    }
+    if (title.includes('puppy')) {
+      return {
+        bg: 'bg-gradient-to-b from-purple-50 via-amber-50 to-emerald-50',
+        border: 'border-purple-200',
+        ground: 'text-purple-900',
+        sky: '🏡 🎾 🐾',
+        itemFilter: 'drop-shadow(0 4px 6px rgba(139, 92, 246, 0.3))'
+      };
+    }
+    if (title.includes('butterfly') || title.includes('flower')) {
+      return {
+        bg: 'bg-gradient-to-b from-purple-50 via-pink-50 to-emerald-50',
+        border: 'border-purple-200',
+        ground: 'text-purple-900',
+        sky: '🌸 🦋 🌷',
+        itemFilter: 'drop-shadow(0 4px 6px rgba(168, 85, 247, 0.3))'
+      };
+    }
+    if (title.includes('duck')) {
+      return {
+        bg: 'bg-gradient-to-b from-cyan-50 via-sky-100 to-amber-50',
+        border: 'border-cyan-200',
+        ground: 'text-sky-900',
+        sky: '💧 🦆 🌾',
+        itemFilter: 'drop-shadow(0 4px 6px rgba(234, 179, 8, 0.3))'
+      };
+    }
     return {
       bg: 'bg-gradient-to-b from-emerald-50 to-teal-50',
       border: 'border-emerald-200',

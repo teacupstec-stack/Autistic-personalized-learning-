@@ -9,9 +9,9 @@ import {
 } from '../services/activityService';
 
 describe('ActivityService & Content Bank', () => {
-  it('loads all 12 teacher-certified counting activities', () => {
+  it('loads all teacher-certified counting activities', () => {
     const all = getAllActivities();
-    expect(all.length).toBe(12);
+    expect(all.length).toBe(40);
     expect(all.every(a => a.teacher_approved)).toBe(true);
   });
 

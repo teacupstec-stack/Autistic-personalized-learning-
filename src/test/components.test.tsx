@@ -62,4 +62,34 @@ describe('Frontend Component Rendering & User Experience Flow', () => {
     expect(screen.getByText(/Auto-Pause Sensitivity/i)).toBeInTheDocument();
     expect(screen.getByText(/Consecutive Miss Limit/i)).toBeInTheDocument();
   });
+
+  it('advances to a new question when Next Fun Question is clicked', () => {
+    render(
+      <AppProvider>
+        <LearnerSessionScreen />
+      </AppProvider>
+    );
+
+    // Start session
+    const startBtn = screen.getByText(/Start Learning Now!/i);
+    fireEvent.click(startBtn);
+
+    // Initial task #1 is active
+    expect(screen.getByText(/Task #1/i)).toBeInTheDocument();
+
+    // Find and click an answer button (e.g. option A, B, or C)
+    const optionButtons = screen.getAllByRole('button', { name: /Option/i });
+    expect(optionButtons.length).toBeGreaterThan(0);
+    fireEvent.click(optionButtons[0]);
+
+    // Next Fun Question button appears
+    const nextBtn = screen.getByText(/Next Fun Question!/i);
+    expect(nextBtn).toBeInTheDocument();
+
+    // Click Next Fun Question
+    fireEvent.click(nextBtn);
+
+    // Task count advances to Task #2
+    expect(screen.getByText(/Task #2/i)).toBeInTheDocument();
+  });
 });
